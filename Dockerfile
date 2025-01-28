@@ -1,14 +1,39 @@
-FROM python:3.11-slim
+# Use a lightweight Python image
+FROM python:3.10-slim
 
-WORKDIR /app
+# Install necessary tools
+RUN apt-get update && apt-get install -y \
+    nano \
+    unzip \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/requirements.txt
-COPY artifacts /app/artifacts
-COPY app.py /app/app.py
+# Create a non-root user
+RUN useradd -m -u 1000 user
+USER user
 
-RUN pip install --upgrade pip && \
-    pip install  --no-cache-dir -r /app/requirements.txt
+# Set environment variables
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH \
+    PORT=7860
 
-EXPOSE 8501
+WORKDIR $HOME/app
 
-CMD ["streamlit", "run", "app.py", "--server.port=7860", "--server.address=0.0.0.0"]
+# Install deta CLI
+RUN curl -fsSL https://get.deta.dev/cli.sh | sh || { echo "Failed to install Deta CLI"; exit 1; }
+
+# Copy requirements.txt first to leverage Docker cache
+COPY requirements.txt $HOME/app/
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code
+COPY --chown=user . $HOME/app
+
+# Expose the port used by Streamlit
+EXPOSE $PORT
+
+# Command to run the Streamlit app
+CMD ["streamlit", "run", "--server.port=7860", "app.py"]
