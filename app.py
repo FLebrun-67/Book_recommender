@@ -26,7 +26,9 @@ def load_model_and_data():
     )
     return knn_model, book_titles, books_df, book_sparse
 
+
 knn_model, book_titles, books_df, book_sparse = load_model_and_data()
+
 
 # Helper functions
 def fetch_poster(suggestion):
@@ -109,9 +111,7 @@ with tab2:
     if search_query:
         filtered_books = books_df[
             books_df["Book-Title"].str.contains(search_query, case=False, na=False)
-        ][
-            ["Book-Title", "Book-Author", "Book-Rating", "Rating-Count"]
-        ]  # Colonnes pertinentes
+        ][["Book-Title", "Book-Author", "Book-Rating", "Rating-Count"]]
 
         if not filtered_books.empty:
             st.write(f"**{len(filtered_books)} books found:**")
@@ -128,7 +128,8 @@ with tab2:
             st.dataframe(
                 filtered_books.sort_values(by="Average Rating", ascending=False),
                 use_container_width=True,
-                height=400,  # Hauteur du tableau
+                hide_index=True,
+                height=500,
             )
         else:
             st.warning("No books found matching your search.")
