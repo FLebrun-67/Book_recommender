@@ -1,3 +1,0 @@
-git lfs track "*.pkl"
-git lfs track "*.csv"
-git lfs track "*.ipynb"
