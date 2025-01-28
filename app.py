@@ -13,36 +13,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom styles
-st.markdown(
-    """
-    <style>
-        .main {
-            background-color: #f5f5f5;
-        }
-        div.stButton > button:first-child {
-            background-color: #4CAF50;
-            color:white;
-            border: None;
-            border-radius: 5px;
-            height: 40px;
-            width: 200px;
-        }
-        div.stButton > button:first-child:hover {
-            background-color: #45a049;
-        }
-        .stMetric {
-            font-size: 16px;
-            font-weight: bold;
-        }
-        img {
-            border-radius: 8px;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 
 # Load data and model
 @st.cache_resource
@@ -56,9 +26,7 @@ def load_model_and_data():
     )
     return knn_model, book_titles, books_df, book_sparse
 
-
 knn_model, book_titles, books_df, book_sparse = load_model_and_data()
-
 
 # Helper functions
 def fetch_poster(suggestion):
@@ -105,7 +73,6 @@ st.title("📚 Book Recommender System")
 st.markdown("### Find your next favorite book with our recommendation system!")
 
 # General Statistics (above tabs)
-st.subheader("📈 General Statistics")
 col1, col2 = st.columns(2)
 col1.metric("Total Books", len(book_titles))
 col2.metric("Total Users", book_sparse.shape[0])
@@ -138,13 +105,31 @@ with tab1:
 with tab2:
     st.subheader("🔍 Search for a Book")
     search_query = st.text_input("Search for a book by keyword")
+
     if search_query:
-        filtered_books = [
-            book for book in book_titles if search_query.lower() in book.lower()
-        ]
-        if filtered_books:
-            st.write("Books Found:")
-            st.write(filtered_books)
+        filtered_books = books_df[
+            books_df["Book-Title"].str.contains(search_query, case=False, na=False)
+        ][
+            ["Book-Title", "Book-Author", "Book-Rating", "Rating-Count"]
+        ]  # Colonnes pertinentes
+
+        if not filtered_books.empty:
+            st.write(f"**{len(filtered_books)} books found:**")
+
+            filtered_books = filtered_books.rename(
+                columns={
+                    "Book-Title": "Title",
+                    "Book-Author": "Author",
+                    "Book-Rating": "Average Rating",
+                    "Rating-Count": "Number of Ratings",
+                }
+            )
+
+            st.dataframe(
+                filtered_books.sort_values(by="Average Rating", ascending=False),
+                use_container_width=True,
+                height=400,  # Hauteur du tableau
+            )
         else:
             st.warning("No books found matching your search.")
 
