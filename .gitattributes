@@ -1,0 +1,3 @@
+git lfs track "artifacts/book_df.pkl"
+git lfs track "data/cleaned_data.csv"
+git lfs track "notebooks/trainSVD.ipynb"
