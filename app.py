@@ -1,3 +1,5 @@
+""" Streamlit app for the Book Recommender System. """
+
 import pickle
 import streamlit as st
 import plotly.express as px
@@ -5,9 +7,11 @@ import plotly.express as px
 # Configure the Streamlit app
 st.set_page_config(page_title="Book Recommender System", layout="wide")
 
+
 # Load data and model
 @st.cache_resource
 def load_model_and_data():
+    """Loads the KNN model and data artifacts."""
     knn_model = pickle.load(open("artifacts/knn_model.pkl", "rb"))
     book_titles = pickle.load(open("artifacts/book_titles.pkl", "rb"))
     books_df = pickle.load(open("artifacts/book_df.pkl", "rb"))
@@ -15,6 +19,7 @@ def load_model_and_data():
         open("artifacts/sparse_user_item_matrix_full_csr.pkl", "rb")
     )
     return knn_model, book_titles, books_df, book_sparse
+
 
 knn_model, book_titles, books_df, book_sparse = load_model_and_data()
 
@@ -25,8 +30,9 @@ if "history" not in st.session_state:
 if "ratings" not in st.session_state:
     st.session_state["ratings"] = []
 
-# Fetch posters for books based on suggestions
+
 def fetch_poster(suggestion):
+    """Fetches book posters based on the suggestions."""
     book_names = []
     poster_urls = []
 
@@ -44,8 +50,9 @@ def fetch_poster(suggestion):
 
     return book_names, poster_urls
 
-# Generate book recommendations
+
 def recommend_book(book_name):
+    """Recommends books based on the selected book."""
     try:
         if book_name not in book_titles:
             st.error("The selected book does not exist in our data.")
@@ -62,11 +69,10 @@ def recommend_book(book_name):
         st.error("Error generating recommendations: " + str(e))
         return [], []
 
+
 # Title and introduction
 st.title("📚 Book Recommender System")
-st.markdown(
-    "### Find your next favorite book with our recommendation system!"
-)
+st.markdown("### Find your next favorite book with our recommendation system!")
 
 # General statistics
 st.markdown("### General Statistics")

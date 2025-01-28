@@ -1,3 +1,5 @@
+""" Trains a book recommender system using a KNN model. """
+
 import os
 import pickle
 import pandas as pd
