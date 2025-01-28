@@ -100,11 +100,6 @@ book-recommender-system/
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
-
-## Contact
-
-For questions or feedback, reach out to **Your Name** at [your-email@example.com](mailto:your-email@example.com).
-
 ---
 Thank you for exploring the Book Recommender System! 🚀
 
