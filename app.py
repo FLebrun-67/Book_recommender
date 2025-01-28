@@ -1,11 +1,47 @@
 """ Streamlit app for the Book Recommender System. """
 
 import pickle
+import pandas as pd
 import streamlit as st
 import plotly.express as px
 
 # Configure the Streamlit app
-st.set_page_config(page_title="Book Recommender System", layout="wide")
+st.set_page_config(
+    page_title="📚 Book Recommender System",
+    page_icon="📖",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Custom styles
+st.markdown(
+    """
+    <style>
+        .main {
+            background-color: #f5f5f5;
+        }
+        div.stButton > button:first-child {
+            background-color: #4CAF50;
+            color:white;
+            border: None;
+            border-radius: 5px;
+            height: 40px;
+            width: 200px;
+        }
+        div.stButton > button:first-child:hover {
+            background-color: #45a049;
+        }
+        .stMetric {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        img {
+            border-radius: 8px;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 # Load data and model
@@ -23,14 +59,8 @@ def load_model_and_data():
 
 knn_model, book_titles, books_df, book_sparse = load_model_and_data()
 
-# Initialize session states for history and ratings
-if "history" not in st.session_state:
-    st.session_state["history"] = []
 
-if "ratings" not in st.session_state:
-    st.session_state["ratings"] = []
-
-
+# Helper functions
 def fetch_poster(suggestion):
     """Fetches book posters based on the suggestions."""
     book_names = []
@@ -70,134 +100,113 @@ def recommend_book(book_name):
         return [], []
 
 
-# Title and introduction
+# Title and introduction (above tabs)
 st.title("📚 Book Recommender System")
 st.markdown("### Find your next favorite book with our recommendation system!")
 
-# General statistics
-st.markdown("### General Statistics")
+# General Statistics (above tabs)
+st.subheader("📈 General Statistics")
 col1, col2 = st.columns(2)
 col1.metric("Total Books", len(book_titles))
 col2.metric("Total Users", book_sparse.shape[0])
 
-# Display popular books
-st.subheader("📈 Popular Books")
-popular_books = books_df.sort_values(by="Rating-Count", ascending=False).head(10)
-cols = st.columns(min(5, len(popular_books)))  # Maximum 5 columns
-for idx, col in enumerate(cols):
-    book_title = popular_books.iloc[idx]["Book-Title"]
-    book_image = popular_books.iloc[idx]["Image-URL-L"]
-    with col:
-        st.image(book_image, use_container_width=True)
-        st.caption(f"**{book_title}**")
-
-st.divider()
-
-# Display top-rated books
-st.subheader("⭐ Top-Rated Books")
-top_rated_books = (
-    books_df.sort_values(by="Book-Rating", ascending=False)
-    .drop_duplicates(subset="Book-Title")
-    .head(10)
-)
-cols = st.columns(min(5, len(top_rated_books)))  # Maximum 5 columns
-for idx, col in enumerate(cols):
-    book_title = top_rated_books.iloc[idx]["Book-Title"]
-    book_image = top_rated_books.iloc[idx]["Image-URL-L"]
-    with col:
-        st.image(book_image, use_container_width=True)
-        st.caption(f"**{book_title}**")
-
-st.divider()
-
-# Recommendation system interface
-st.subheader("📚 Find and Get Recommendations")
-selected_book = st.selectbox(
-    "Type or select a book from the dropdown menu", book_titles, key="selectbox_knn"
+# Tabs for different sections
+tab1, tab2, tab3, tab4 = st.tabs(
+    ["📚 Recommendations", "🔍 Search", "📊 Visualizations", "📈 Popular Books"]
 )
 
-if st.button("Show Recommendations"):
-    with st.spinner("Loading recommendations..."):
-        recommended_books, poster_url = recommend_book(selected_book)
-    if recommended_books:
-        st.subheader("🔍 Recommendations for You:")
-        st.session_state["history"].append(
-            {"book": selected_book, "recommendations": recommended_books}
-        )
-        cols = st.columns(len(recommended_books))
-        for idx, col in enumerate(cols):
-            if idx > 0:  # Skip the selected book itself
+# Tab 1: Recommendations
+with tab1:
+    st.subheader("📚 Find and Get Recommendations")
+    selected_book = st.selectbox(
+        "Type or select a book from the dropdown menu", book_titles, key="selectbox_knn"
+    )
+    if st.button("Show Recommendations"):
+        with st.spinner("Loading recommendations..."):
+            recommended_books, poster_url = recommend_book(selected_book)
+        if recommended_books:
+            st.subheader("🔍 Recommendations for You:")
+            cols = st.columns(len(recommended_books))
+            for idx, col in enumerate(cols):
                 with col:
                     st.image(poster_url[idx], use_container_width=True)
                     st.caption(recommended_books[idx])
+        else:
+            st.warning("No recommendations found. Try selecting another book.")
 
-        # Rating the recommendations
-        st.markdown("### Rate the Recommendations")
-        rating = st.slider("How would you rate these recommendations?", 1, 5, 3)
-        if st.button("Submit Your Feedback"):
-            st.session_state["ratings"].append(
-                {"book": selected_book, "rating": rating}
-            )
-            st.success(f"Thank you for your feedback: {rating} stars!")
-    else:
-        st.warning("No recommendations found. Try selecting another book.")
+# Tab 2: Search
+with tab2:
+    st.subheader("🔍 Search for a Book")
+    search_query = st.text_input("Search for a book by keyword")
+    if search_query:
+        filtered_books = [
+            book for book in book_titles if search_query.lower() in book.lower()
+        ]
+        if filtered_books:
+            st.write("Books Found:")
+            st.write(filtered_books)
+        else:
+            st.warning("No books found matching your search.")
 
-# Recommendation history
-if st.checkbox("Show recommendation history"):
-    st.subheader("📜 Recommendation History")
-    for entry in st.session_state["history"]:
-        st.write(f"**{entry['book']}** → {', '.join(entry['recommendations'])}")
+# Tab 3: Visualizations
+with tab3:
+    st.subheader("📊 Visualizations")
+    if st.checkbox("Show Rating Distribution"):
+        fig = px.histogram(
+            books_df,
+            x="Book-Rating",
+            nbins=20,
+            title="Book Ratings Distribution",
+            labels={"Book-Rating": "Rating"},
+            template="plotly_dark",
+        )
+        st.plotly_chart(fig)
 
-# Advanced search
-st.sidebar.header("🔎 Search for a book")
-search_query = st.sidebar.text_input("Search for a book by keyword")
-if search_query:
-    filtered_books = [
-        book for book in book_titles if search_query.lower() in book.lower()
-    ]
-    if filtered_books:
-        st.sidebar.write("Books found:")
-        st.sidebar.write(filtered_books)
-    else:
-        st.sidebar.warning("No books found matching your search.")
+    if st.checkbox("Show User Rating Distribution"):
+        user_ratings = book_sparse.getnnz(axis=1)
+        fig = px.histogram(
+            x=user_ratings,
+            nbins=20,
+            title="User Rating Distribution",
+            labels={"x": "Number of Ratings", "y": "Number of Users"},
+        )
+        st.plotly_chart(fig)
 
-# Random book discovery
-if st.sidebar.button("Discover a random book"):
-    random_book = books_df.sample(1)
-    st.sidebar.write(f"📖 Discover: **{random_book.iloc[0]['Book-Title']}**")
-    st.sidebar.image(random_book.iloc[0]["Image-URL-L"], use_container_width=True)
+# Tab 4: Popular Books
+with tab4:
+    st.subheader("📈 Popular Books")
+    popular_books = books_df.sort_values(by="Rating-Count", ascending=False).head(10)
+    cols = st.columns(min(5, len(popular_books)))  # Maximum 5 columns
+    for idx, col in enumerate(cols):
+        book_title = popular_books.iloc[idx]["Book-Title"]
+        book_image = popular_books.iloc[idx]["Image-URL-L"]
+        with col:
+            st.image(book_image, use_container_width=True)
+            st.caption(f"**{book_title}**")
 
-# Statistics visualizations
-st.subheader("📊 Visualizations")
-if st.checkbox("Show rating distribution"):
-    fig = px.histogram(
-        books_df,
-        x="Book-Rating",
-        nbins=20,
-        title="Book ratings distribution",
-        labels={"Book-Rating": "Rating"},
-        template="plotly_dark",
+    st.divider()
+
+    st.subheader("⭐ Top-Rated Books")
+    top_rated_books = (
+        books_df.sort_values(by="Book-Rating", ascending=False)
+        .drop_duplicates(subset="Book-Title")
+        .head(10)
     )
-    st.plotly_chart(fig)
+    cols = st.columns(min(5, len(top_rated_books)))  # Maximum 5 columns
+    for idx, col in enumerate(cols):
+        book_title = top_rated_books.iloc[idx]["Book-Title"]
+        book_image = top_rated_books.iloc[idx]["Image-URL-L"]
+        with col:
+            st.image(book_image, use_container_width=True)
+            st.caption(f"**{book_title}**")
 
-if st.checkbox("Show most popular books"):
-    top_books = books_df.nlargest(10, "Rating-Count")
-    fig = px.bar(
-        top_books,
-        x="Book-Title",
-        y="Rating-Count",
-        title="Most Popular Books",
-        labels={"Book-Title": "Title", "Rating-Count": "Number of Ratings"},
-        template="plotly_dark",
-    )
-    st.plotly_chart(fig)
-
-if st.checkbox("Show user rating distribution"):
-    user_ratings = book_sparse.getnnz(axis=1)
-    fig = px.histogram(
-        x=user_ratings,
-        nbins=20,
-        title="User rating distribution",
-        labels={"x": "Number of ratings", "y": "Number of users"},
-    )
-    st.plotly_chart(fig)
+# Footer
+st.markdown(
+    """
+    <hr style="margin-top: 50px; border: none; border-top: 1px solid #ccc;" />
+    <div style="text-align: center; color: gray; font-size: 14px; margin-top: 10px;">
+        Made with ❤️ using <a href="https://streamlit.io" target="_blank" style="text-decoration: none; color: #4CAF50;">Streamlit</a>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
