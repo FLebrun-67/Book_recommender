@@ -6,6 +6,11 @@ RUN apt-get update && apt-get install -y \
     nano \
     unzip \
     curl \
+    build-essential \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

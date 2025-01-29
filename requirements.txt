@@ -1,6 +1,7 @@
+numpy<2.0
 streamlit
 streamlit-extras
 pandas
-numpy
-scikit-learn
+scikit-learn==1.5.2
 plotly
+scikit-surprise==1.1.4

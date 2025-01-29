@@ -5,6 +5,11 @@ import pickle
 import pandas as pd
 from scipy.sparse import coo_matrix
 from sklearn.neighbors import NearestNeighbors
+#modif for git: rajout des librairies surprise for SVD model
+from surprise import Dataset
+from surprise import Reader
+from surprise import SVD
+from surprise.model_selection import GridSearchCV
 
 
 def load_data(file_path):
@@ -56,10 +61,38 @@ def find_similar_books(knn_model, book_titles, sparse_matrix, example_book_index
     for i, book in enumerate(similar_books, 1):
         print(f"{i}. {book}")
 
+def train_svd_model(data):
+    """Trains on SVD model using surprise library"""
+    print("\nStep 6: Training the SVD model ... ")
+    reader = Reader(rating_scale=(1, 7))
+    dataset = Dataset.load_from_df(data[['User-ID', 'Book-Title', 'New-Rating']], reader)
+
+    param_grid = {
+        'n_factors': [20, 50, 100],
+        'lr_all': [0.002, 0.005, 0.01],
+        'reg_all': [0.02, 0.05, 0.1]
+    }
+
+    grid_search_SVD = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=5)
+    grid_search_SVD.fit(dataset)
+
+    best_params = grid_search_SVD.best_params['rmse']
+    optimized_SVDmodel = SVD(
+        n_factors=best_params['n_factors'],
+        lr_all=best_params['lr_all'],
+        reg_all=best_params['reg_all']
+    )
+
+    trainset = dataset.build_full_trainset()
+    optimized_SVDmodel.fit(trainset)
+    
+    print("Best SVD parameters:", best_params)
+    print("SVD model trained successfully.")
+    return optimized_SVDmodel
 
 def save_artifacts(artifacts_path, **artifacts):
     """Saves artifacts to the specified directory."""
-    print("\nStep 6: Saving artifacts...")
+    print("\nStep 7: Saving artifacts...")
     os.makedirs(artifacts_path, exist_ok=True)
     for name, artifact in artifacts.items():
         file_path = os.path.join(artifacts_path, f"{name}.pkl")
@@ -81,8 +114,9 @@ def main():
     # Create user-item matrix
     sparse_matrix, book_titles = create_user_item_matrix(book_df)
 
-    # Train KNN model
+    # Train KNN model & SVD model
     knn_model = train_knn_model(sparse_matrix)
+    svd_model = train_svd_model(book_df)
 
     # Find similar books
     find_similar_books(knn_model, book_titles, sparse_matrix)
@@ -91,6 +125,7 @@ def main():
     save_artifacts(
         artifacts_path,
         knn_model=knn_model,
+        svd_model=svd_model,
         book_titles=book_titles,
         book_df=book_df,
         sparse_user_item_matrix_full_csr=sparse_matrix.tocsr(),
