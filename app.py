@@ -211,10 +211,12 @@ with tab2:
 
 with tab3:
     st.subheader("🔍 Search for a Book")
+    
     search_query = st.text_input("Search for a book by keyword")
     if search_query:
-        filtered_books = books_df[
-            books_df["Book-Title"].str.contains(search_query, case=False, na=False)
+        unique_books = books_df.drop_duplicates(subset=["Book-Title"])
+        filtered_books = unique_books[
+            unique_books["Book-Title"].str.contains(search_query, case=False, na=False)
         ][["Book-Title", "Book-Author", "Book-Rating", "Rating-Count"]]
 
         if not filtered_books.empty:
@@ -261,9 +263,9 @@ with tab4:
         st.plotly_chart(fig)
 
     if st.checkbox("Show most popular books"):
-        top_books = books_df.nlargest(10, "Rating-Count")
+        popular_books = books_df.sort_values(by="Rating-Count", ascending=False).drop_duplicates(subset="Book-Title").head(10)
         fig = px.bar(
-            top_books,
+            popular_books,
             x="Book-Title",
             y="Rating-Count",
             title="Most Popular Books",
