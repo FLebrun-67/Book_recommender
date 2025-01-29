@@ -10,6 +10,7 @@ from surprise import Dataset
 from surprise import Reader
 from surprise import SVD
 from surprise.model_selection import GridSearchCV
+from surprise.model_selection import KFold
 
 
 def load_data(file_path):
@@ -64,13 +65,14 @@ def find_similar_books(knn_model, book_titles, sparse_matrix, example_book_index
 def train_svd_model(data):
     """Trains on SVD model using surprise library"""
     print("\nStep 6: Training the SVD model ... ")
-    reader = Reader(rating_scale=(1, 7))
-    dataset = Dataset.load_from_df(data[['User-ID', 'Book-Title', 'New-Rating']], reader)
+    reader = Reader(rating_scale=(1, 10))
+    dataset = Dataset.load_from_df(data[['User-ID', 'Book-Title', 'Book-Rating']], reader)
+    kf = KFold(n_splits=5)
 
     param_grid = {
-        'n_factors': [20, 50, 100],
-        'lr_all': [0.002, 0.005, 0.01],
-        'reg_all': [0.02, 0.05, 0.1]
+        'n_factors': [70, 100],
+        'lr_all': [0.01, 0.05, 0.1],
+        'reg_all': [0.1, 0.25, 0.30, 0.35]
     }
 
     grid_search_SVD = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=5)
@@ -82,9 +84,9 @@ def train_svd_model(data):
         lr_all=best_params['lr_all'],
         reg_all=best_params['reg_all']
     )
+    for trainset, _ in kf.split(dataset):
 
-    trainset = dataset.build_full_trainset()
-    optimized_SVDmodel.fit(trainset)
+        optimized_SVDmodel.fit(trainset)
     
     print("Best SVD parameters:", best_params)
     print("SVD model trained successfully.")
