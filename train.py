@@ -28,7 +28,7 @@ def create_user_item_matrix(data):
     print("\nStep 3: Creating user-item matrix...")
     users = data["User-ID"].astype("category").cat.codes
     books = data["Book-Title"].astype("category").cat.codes
-    ratings = data["Book-Rating"]
+    ratings = data["Book-Rating"]   #New-Rating
     sparse_matrix = coo_matrix((ratings, (users, books)))
     print(f"User-item matrix created with dimensions: {sparse_matrix.shape}.")
     return sparse_matrix, data["Book-Title"].astype("category").cat.categories
@@ -71,7 +71,7 @@ def save_artifacts(artifacts_path, **artifacts):
 def main():
     """Main function to train the book recommender system."""
     # File paths
-    data_file_path = "./data/cleaned_data.csv"
+    data_file_path = "./data/dataset.csv"   # cleaned_data.csv
     artifacts_path = "artifacts/"
 
     # Load and inspect data
