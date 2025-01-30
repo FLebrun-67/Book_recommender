@@ -20,15 +20,13 @@ def load_model_and_data():
     knn_model = pickle.load(open("artifacts/knn_model.pkl", "rb"))
     book_titles = pickle.load(open("artifacts/book_titles.pkl", "rb"))
     books_df = pickle.load(open("artifacts/book_df.pkl", "rb"))
-    book_sparse = pickle.load(
-        open("artifacts/sparse_user_item_matrix_full_csr.pkl", "rb")
-    )
-    svd_model = pickle.load(open("artifacts/svd_model.pkl", "rb"))
-    return knn_model, book_titles, books_df, book_sparse, svd_model
+    svd_model = pickle.load(open('artifacts/svd_model.pkl', 'rb'))
+    X_final = pickle.load(open('artifacts/X_final.pkl', 'rb'))
+    books_df_knn = pickle.load(open('artifacts/book_df_knn.pkl', 'rb'))
 
+    return knn_model, book_titles, books_df, svd_model, X_final, books_df_knn
 
-knn_model, book_titles, books_df, book_sparse, svd_model = load_model_and_data()
-
+knn_model, book_titles, books_df, svd_model, X_final, books_df_knn = load_model_and_data()
 
 def fetch_poster(book_list):
     """Fetch the poster URLs for the given list of books."""
@@ -55,21 +53,34 @@ def fetch_poster(book_list):
 
     return book_names, poster_urls
 
+def recommend_book_knn(book_name, books_df_knn, knn_model, X_final):
+    """
+    Recommends books based on the enriched KNN model.
+    
+    Args:
+        book_titles (str): Name of the selected book.
+        book_df_knn (pd.DataFrame): Grouped dataset with metadata.
+        knn_model (NearestNeighbors): Trained KNN model.
+        X_final (np.array): Feature matrix used for training the KNN model.
 
-def recommend_book_knn(book_name):
-    """Recommend similar books based on the KNN model."""
+    Returns:
+        book_names (list): List of recommended book titles.
+        poster_urls (list): List of poster URLs for the recommended books.
+    """
     try:
-        if book_name not in book_titles:
-            st.error("The selected book does not exist in our database.")
+        # Vérifier si le livre existe
+        if book_name not in books_df_knn["Book-Title"].values:
+            st.error("Selected book doesn't exist.")
             return [], []
 
-        book_id = book_titles.get_loc(book_name)
+        # Obtenir l'indice du livre sélectionné
+        book_idx = books_df_knn[books_df_knn["Book-Title"] == book_name].index[0]
 
-        distances, suggestions = knn_model.kneighbors(
-            book_sparse.T[book_id], n_neighbors=11
-        )
+        # Trouver les voisins avec le modèle KNN
+        distances, suggestions = knn_model.kneighbors([X_final[book_idx]], n_neighbors=10)  # Inclure un voisin supplémentaire pour filtrer le livre lui-même
 
-        books_list = [book_titles[suggestion_id] for suggestion_id in suggestions[0]]
+        # Récupérer les informations des livres recommandés
+        books_list = [books_df_knn.iloc[suggestion_id]["Book-Title"] for suggestion_id in suggestions[0]]
 
         books_list = [book for book in books_list if book != book_name]
 
@@ -78,7 +89,7 @@ def recommend_book_knn(book_name):
         )  # Limiter à 10 livres après filtrage
         return book_names, poster_urls
     except Exception as e:
-        st.error("Error when generating recommendations : " + str(e))
+        st.error("Recommendation display error (KNN): " + str(e))
         return [], []
 
 
@@ -98,7 +109,7 @@ def recommend_book_svd(user_id, n_recommendations=10):
     user_books = books_df[books_df["User-ID"] == user_id]["Book-Title"].unique()
     books_to_predict = [book for book in all_books if book not in user_books]
     if not books_to_predict:
-        st.warning("No book to predict for this user.")
+        st.warning("No books to find for this user.")
 
     predictions = [
         (book, svd_model.predict(user_id, book).est) for book in books_to_predict
@@ -141,9 +152,10 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 with tab1:
     if "history" not in st.session_state:
         st.session_state["history"] = []
-    st.subheader("📚 Find and get recommendations")
-    user_ids = list(books_df["User-ID"].unique()) + ["Guest user"]
-    selected_user = st.selectbox("Choose a user :", user_ids)
+# Recommendation system interface
+    st.subheader("📚 Find You and Get Recommendations")
+    user_ids = list(books_df['User-ID'].unique()) + ["Invited Users"]
+    selected_user = st.selectbox("Find your user ID:", user_ids)
 
     if st.button("Show Recommendations", key="recommendations_svd"):
         with st.spinner("Loading recommendations..."):
@@ -186,14 +198,13 @@ with tab1:
 with tab2:
     if "history" not in st.session_state:
         st.session_state["history"] = []
-    st.subheader("Similar recommendations based on a selected book")
-    selected_book = st.selectbox(
-        "Type or select a book from the drop-down menu:", book_titles
-    )
+    # Afficher les recommandations basées sur le livre (KNN)
+    st.subheader("📚 Find a Book and Get Recommendations!")
+    selected_book = st.selectbox("Write or find a Book :", book_titles)
 
-    if st.button("Display recommendations", key="recommendations_knn"):
+    if st.button("Display recommendations (KNN)", key="recommendations_knn"):
         with st.spinner("Loading recommendations..."):
-            book_list, poster_list = recommend_book_knn(selected_book)
+            book_list, poster_list = recommend_book_knn(selected_book, books_df_knn, knn_model, X_final)
 
         if book_list:
             st.session_state["history"].append(
@@ -287,15 +298,6 @@ with tab4:
         )
         st.plotly_chart(fig)
 
-    if st.checkbox("Show user rating distribution"):
-        user_ratings = book_sparse.getnnz(axis=1)
-        fig = px.histogram(
-            x=user_ratings,
-            nbins=20,
-            title="User rating distribution",
-            labels={"x": "Number of ratings", "y": "Number of users"},
-        )
-        st.plotly_chart(fig)
 
 # Tab 5: Popular books
 with tab5:
@@ -319,7 +321,7 @@ with tab5:
 with tab6:
     st.subheader("⭐ Top-rated books")
     top_rated_books = (
-        books_df.sort_values(by="Book-Rating", ascending=False)
+        books_df.sort_values(by="Weighted-Rating", ascending=False)
         .drop_duplicates(subset="Book-Title")
         .head(10)
     )
