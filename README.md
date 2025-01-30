@@ -1,6 +1,6 @@
 # 📚 Book Recommender System
 
-Welcome to the **Book Recommender System**! This project is a Streamlit-based application that provides personalized book recommendations using a k-Nearest Neighbors (kNN) model.
+Welcome to the **Book Recommender System**! This project is a Streamlit-based application that provides personalized book recommendations using a k-Nearest Neighbors (kNN) model, and a collaborative filtering approach via SVD.
 
 ---
 
@@ -37,6 +37,7 @@ Welcome to the **Book Recommender System**! This project is a Streamlit-based ap
 - **pandas**: For data manipulation.
 - **plotly**: For creating interactive visualizations.
 - **pickle**: For saving and loading the pre-trained model and datasets.
+- **SVD (Singular Value Decomposition)**: For collaborative filtering-based recommendations.
 
 ---
 
@@ -46,13 +47,6 @@ Welcome to the **Book Recommender System**! This project is a Streamlit-based ap
 
 - Python 3.9 or later
 - Required Python libraries (listed in `requirements.txt`):
-  ```
-  streamlit
-  scikit-learn
-  pandas
-  plotly
-  numpy
-  ```
 
 ### Steps to Run
 
@@ -69,6 +63,7 @@ Welcome to the **Book Recommender System**! This project is a Streamlit-based ap
 
 3. Place the required data and model files in the `artifacts/` directory:
    - `knn_model.pkl`
+   - `svd_model.pkl`
    - `book_titles.pkl`
    - `book_df.pkl`
    - `sparse_user_item_matrix_full_csr.pkl`
@@ -86,24 +81,40 @@ Welcome to the **Book Recommender System**! This project is a Streamlit-based ap
 
 ```
 book-recommender-system/
-├── app.py                 # Main application script
-├── artifacts/             # Contains model and dataset files
-├── requirements.txt       # Dependencies
-├── README.md              # Project documentation
-├── Dockerfile             # Docker configuration file
-├── runtime.txt            # Runtime environment specification
-├── train.py               # Python script for training
-├── notebooks/             # Contains Jupyter notebooks
-│   ├── train.ipynb        # Notebook for training the model
-├── data/                  # Raw and cleaned datasets
-│   ├── cleaned_data.csv   # Preprocessed dataset
+├── app.py                        # Main application script
+├── artifacts/                    # Contains model and dataset files
+│   ├── svd_model.pkl             # Trained SVD model
+│   ├── knn_model.pkl            # Trained KNN model
+│   ├── book_df.pkl              # Book DataFrame
+│   ├── sparse_user_item_matrix_full_csr.pkl  # Sparse matrix for recommendations
+│   └── book_titles.pkl          # Titles of the books
+├── data/                         # Raw and cleaned datasets
+│   ├── dataset.csv              # Raw dataset with book info
+│   ├── Ratings.csv              # Ratings data
+│   ├── dataset_with_details.csv # Extended dataset
+│   ├── cleaned_data.csv         # Preprocessed dataset
+│   ├── Users.csv                # User data
+│   └── Books.csv                # Book data
+├── scrapper/                     # Scraping scripts
+│   ├── scrapper.py              # Main scraping script
+│   └── scrapper_cache_check.py  # Script to verify cached data
+├── notebooks/                    # Jupyter notebooks for model training and analysis
+│   ├── base.ipynb               # Basic EDA notebook
+├── Dockerfile                    # Docker configuration file
+├── train.py                      # Script for training the recommendation model
+├── requirements.txt              # Dependencies for the project
+├── runtime.txt                   # Specifies Python version for deployment
+├── README.md                     # Project documentation
+├── LICENSE                       # License information
+└── .gitignore                    # Git ignore file
 ```
 
 ### Description of Key Files
 
-- **artifacts/**: Contains all the generated artifacts from the training process, including the trained model and processed data.
+- **artifacts/**: Contains all the generated artifacts from the training process, including the trained models and processed data.
 - **data/**: Directory for raw and cleaned datasets.
-- **notebooks/**: Jupyter notebooks for exploratory data analysis and training.
+- **scrapper/**: Contains the scraping scripts used to collect book and user data.
+- **notebooks/**: Jupyter notebooks for exploratory data analysis (EDA) and model training.
 - **Dockerfile**: Used for containerizing the application.
 - **app.py**: The main application file for deploying the recommendation engine.
 - **requirements.txt**: Lists all the Python dependencies required for the project.
@@ -122,15 +133,6 @@ book-recommender-system/
 
 ### 🎨 Visualizations
 ![Visualizations](https://via.placeholder.com/600x300)
-
----
-
-## 🔧 Future Improvements
-
-- Add user authentication to personalize recommendations.
-- Include more filters (e.g., genre, author) to refine recommendations.
-- Use a larger dataset for improved accuracy.
-- Implement collaborative filtering for better personalization.
 
 ---
 
