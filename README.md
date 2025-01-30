@@ -66,7 +66,6 @@ Welcome to the **Book Recommender System**! This project is a Streamlit-based ap
    - `svd_model.pkl`
    - `book_titles.pkl`
    - `book_df.pkl`
-   - `sparse_user_item_matrix_full_csr.pkl`
 
 4. Run the Streamlit app:
    ```bash
@@ -86,7 +85,6 @@ book-recommender-system/
 │   ├── svd_model.pkl             # Trained SVD model
 │   ├── knn_model.pkl            # Trained KNN model
 │   ├── book_df.pkl              # Book DataFrame
-│   ├── sparse_user_item_matrix_full_csr.pkl  # Sparse matrix for recommendations
 │   └── book_titles.pkl          # Titles of the books
 ├── data/                         # Raw and cleaned datasets
 │   ├── dataset.csv              # Raw dataset with book info
