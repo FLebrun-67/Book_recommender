@@ -80,7 +80,16 @@ Welcome to the **Book Recommender System**! This project is a Streamlit-based ap
 
 ```
 book-recommender-system/
-├── app.py                        # Main application script
+├── app.py                        # Main application script  
+├── utils.py                      # Functions library
+├── tabs/                         # Tabs functions library
+│   ├── tab0.py
+│   ├── tab1.py
+│   ├── tab2.py
+│   ├── tab3.py
+│   ├── tab4.py
+│   ├── tab5.py
+│   └── tab6.py
 ├── artifacts/                    # Contains model and dataset files
 │   ├── svd_model.pkl             # Trained SVD model
 │   ├── knn_model.pkl            # Trained KNN model
