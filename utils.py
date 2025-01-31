@@ -18,6 +18,7 @@ def fetch_poster(books_df, book_list):
     """Fetch the poster URLs for the given list of books."""
     book_names = []
     poster_urls = []
+    book_descriptions = []
     default_image = "https://via.placeholder.com/150"
 
     for book in book_list:
@@ -31,13 +32,20 @@ def fetch_poster(books_df, book_list):
                     if pd.notna(img_url) and img_url.startswith("http")
                     else default_image
                 )
+                # Récupération de la description du livre
+                description = books_df.loc[idx[0], "Description"]
+                book_descriptions.append(
+                    description if pd.notna(description) else "Description non disponible"
+                    )
             else:
                 poster_urls.append(default_image)
+                book_descriptions.append("Description non disponible")
         else:
             book_names.append(book)
             poster_urls.append(default_image)
+            book_descriptions.append("Description non disponible")
 
-    return book_names, poster_urls
+    return book_names, poster_urls, book_descriptions
 
 def recommend_book_knn(books_df, book_name, books_df_knn, knn_model, X_final):
     """Recommends books based on the enriched KNN model."""
@@ -51,8 +59,8 @@ def recommend_book_knn(books_df, book_name, books_df_knn, knn_model, X_final):
         books_list = [books_df_knn.iloc[suggestion_id]["Book-Title"] for suggestion_id in suggestions[0]]
         books_list = [book for book in books_list if book != book_name]
         
-        book_names, poster_urls = fetch_poster(books_df, books_list[:10])
-        return book_names, poster_urls
+        book_names, poster_urls, book_descriptions = fetch_poster(books_df, books_list[:10])
+        return book_names, poster_urls, book_descriptions
     except Exception as e:
         st.error("Recommendation display error (KNN): " + str(e))
         return [], []
@@ -66,8 +74,8 @@ def recommend_book_svd(user_id, books_df, svd_model, n_recommendations=10):
             .sort_values(ascending=False)
             .head(n_recommendations)
         )
-        book_name, poster_url = fetch_poster(books_df, popular_books.index.tolist())
-        return list(zip(book_name, popular_books.values, poster_url))
+        book_name, poster_url, book_descriptions = fetch_poster(books_df, popular_books.index.tolist())
+        return list(zip(book_name, popular_books.values, poster_url, book_descriptions))
 
     all_books = books_df["Book-Title"].unique()
     user_books = books_df[books_df["User-ID"] == user_id]["Book-Title"].unique()
@@ -82,8 +90,8 @@ def recommend_book_svd(user_id, books_df, svd_model, n_recommendations=10):
     ]
     predictions = sorted(predictions, key=lambda x: x[1], reverse=True)[:n_recommendations]
 
-    book_name, poster_url = fetch_poster(books_df, [book for book, _ in predictions])
-    return list(zip(book_name, [rating for _, rating in predictions], poster_url))
+    book_name, poster_url, book_descriptions = fetch_poster(books_df, [book for book, _ in predictions])
+    return list(zip(book_name, [rating for _, rating in predictions], poster_url, book_descriptions))
 
 def render_aligned_image(image_url, title, height=500):
     """Render an image with the given title and height."""
