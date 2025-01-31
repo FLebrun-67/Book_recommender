@@ -31,14 +31,14 @@ if "active_tab" not in st.session_state:
 
 # Tabs for different sections
 login_tab = f"Logout / {st.session_state.user_id}" if st.session_state.user_id != "Guest user" else "Login / Guest"
-tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab0, tab1, tab2, tab3, tab5, tab6, tab4 = st.tabs([
     "🦄" + login_tab,
-    "🧑‍💻 Recommendations for users",
+    "🧑‍💻 My Recommendations",
     "📚 Recommendations by books",
     "🔍 Search",
-    "📊 Visualizations",
     "📈 Popular books",
     "⭐ Top-Rated books",
+    "📊 About",
 ])
 
 # Tab contents
@@ -54,14 +54,14 @@ with tab2:
 with tab3:
     show_search_tab(books_df)
 
-with tab4:
-    show_visualizations(books_df)
-
 with tab5:
     show_popular_books(books_df)
 
 with tab6:
     show_top_rated_books(books_df)
+    
+with tab4:
+    show_visualizations(books_df)
 
 
 # Footer
