@@ -69,7 +69,7 @@ def recommend_book_svd(user_id, books_df, svd_model, n_recommendations=10):
     """Recommend books for a given user using the SVD model."""
     if user_id not in books_df["User-ID"].unique():
         popular_books = (
-            books_df.groupby("Book-Title")["New-Rating"]
+            books_df.groupby("Book-Title")["Book-Rating"]
             .mean()
             .sort_values(ascending=False)
             .head(n_recommendations)

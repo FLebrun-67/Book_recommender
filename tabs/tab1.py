@@ -15,6 +15,9 @@ def show_user_recommendations(books_df, svd_model):
     
     if selected_user not in st.session_state:
         st.session_state[selected_user] = []
+
+    # Case à cocher pour activer/désactiver l'affichage des descriptions
+    show_descriptions = st.checkbox("Show book descriptions", value=False)
         
     if st.button("Show Recommendations", key="recommendations_svd"):
         with st.spinner("Loading recommendations..."):
@@ -37,7 +40,8 @@ def show_user_recommendations(books_df, svd_model):
                 for idx, col in enumerate(cols):
                     book_name, rating, poster, book_description = row[idx]
                     col.markdown(render_aligned_image(poster, book_name), unsafe_allow_html=True)
-                    col.markdown(f"{book_description}")
+                    if show_descriptions:
+                        col.markdown(f"{book_description}")
         else:
             st.warning("No recommendations found for this user.")
 

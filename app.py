@@ -4,7 +4,6 @@ from tabs.tab0 import show_login
 from tabs.tab1 import show_user_recommendations
 from tabs.tab2 import show_book_recommendations
 from tabs.tab3 import show_search_tab
-from tabs.tab4 import show_visualizations
 from tabs.tab5 import show_popular_books
 from tabs.tab6 import show_top_rated_books
 
@@ -59,9 +58,6 @@ with tab5:
 
 with tab6:
     show_top_rated_books(books_df)
-    
-with tab4:
-    show_visualizations(books_df)
 
 
 # Footer

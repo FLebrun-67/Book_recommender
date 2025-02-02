@@ -12,7 +12,7 @@ def show_search_tab(books_df):
         unique_books = books_df.drop_duplicates(subset=["Book-Title"])
         filtered_books = unique_books[
             unique_books["Book-Title"].str.contains(search_query, case=False, na=False)
-        ][["Book-Title", "Book-Author", "Weighted-Rating", "Rating-Count"]]
+        ][["Book-Title", "Book-Author", "Book-Rating", "Rating-Count"]]
 
         if not filtered_books.empty:
             st.write(f"**{len(filtered_books)} books found:**")
@@ -21,13 +21,13 @@ def show_search_tab(books_df):
                 columns={
                     "Book-Title": "Title",
                     "Book-Author": "Author",
-                    "Weighted-Rating": "Average Rating",
+                    "Book-Rating": "Rating",
                     "Rating-Count": "Number of Ratings",
                 }
             )
 
             st.dataframe(
-                filtered_books.sort_values(by="Average Rating", ascending=False),
+                filtered_books.sort_values(by="Rating", ascending=False),
                 use_container_width=True,
                 hide_index=True,
                 height=500,
