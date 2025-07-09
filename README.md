@@ -314,7 +314,7 @@ streamlit run app.py
 
 ## 🔗 Liens Utiles
 
-- [🚀 **Démo Live**](https://huggingface.co/spaces/Beltzark/Book-recommender)
+- [🚀 **Démo Live**](https://huggingface.co/spaces/Beltzark/Book_recommender)
 - [📖 **Documentation API**](https://openlibrary.org/developers/api)
 - [🎓 **Cours ML**](https://www.jedha.co/)
 - [📚 **Ressources Streamlit**](https://docs.streamlit.io/)
