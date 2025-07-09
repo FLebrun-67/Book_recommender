@@ -1,152 +1,330 @@
 # 📚 Book Recommender System
 
-Welcome to the **Book Recommender System**! This project is a Streamlit-based application that provides personalized book recommendations using a k-Nearest Neighbors (kNN) model, and a collaborative filtering approach via SVD.
+> *Un système de recommandation de livres hybride intelligent utilisant SVD et KNN avec métadonnées enrichies*
+
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5.2-orange.svg)](https://scikit-learn.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## 🎯 Objectif du Projet
+
+Ce projet implémente un **système de recommandation de livres hybride** qui combine plusieurs approches d'intelligence artificielle pour offrir des recommandations personnalisées et pertinentes. Le système utilise à la fois la **factorisation matricielle SVD** pour les recommandations basées sur les utilisateurs et **k-NN** pour les recommandations basées sur la similarité des livres.
+
+### **Fonctionnalités principales :**
+- 🧑‍💻 **Recommandations personnalisées** basées sur l'historique utilisateur
+- 📚 **Recommandations par similarité** de livres
+- 🌟 **Système hybride** combinant SVD et métadonnées enrichies
+- 🔍 **Interface interactive** avec Streamlit
+- 🏗️ **Construction automatique** de dataset via API
+- 🚀 **Déploiement** Docker et Hugging Face Spaces
 
 ---
 
-## 🔍 Features
+## 🏗️ Architecture du Système
 
-### 🔢 General Statistics
-- Displays the total number of books and users in the dataset.
-
-### 🎮 Popular Books
-- Shows the most popular books based on the number of ratings.
-
-### 🌟 Top-Rated Books
-- Highlights the top-rated books in the dataset.
-
-### 🔍 Recommendations
-- Provides book recommendations based on user selection.
-- Allows users to rate recommendations and save their feedback.
-
-### 🕵️‍♂️ Advanced Search
-- Search for books by keywords.
-
-### 🌐 Random Book Discovery
-- Discover a random book from the dataset.
-
-### 🎨 Visualizations
-- View distributions of ratings and user interactions with books.
-
----
-
-## 💪 Technologies Used
-
-- **Streamlit**: For building the web-based user interface.
-- **scikit-learn**: For implementing the kNN recommendation algorithm.
-- **pandas**: For data manipulation.
-- **plotly**: For creating interactive visualizations.
-- **pickle**: For saving and loading the pre-trained model and datasets.
-- **SVD (Singular Value Decomposition)**: For collaborative filtering-based recommendations.
-
----
-
-## 🚀 How to Run the Application
-
-### Prerequisites
-
-- Python 3.9 or later
-- Required Python libraries (listed in `requirements.txt`):
-
-### Steps to Run
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/book-recommender-system.git
-   cd book-recommender-system
-   ```
-
-2. Install the dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Place the required data and model files in the `artifacts/` directory:
-   - `knn_model.pkl`
-   - `svd_model.pkl`
-   - `book_titles.pkl`
-   - `book_df.pkl`
-
-4. Run the Streamlit app:
-   ```bash
-   streamlit run app.py
-   ```
-
-5. Open your web browser and navigate to `http://localhost:8501`.
-
----
-
-## 🌄 File Structure
-
-```
-book-recommender-system/
-├── app.py                        # Main application script  
-├── utils.py                      # Functions library
-├── tabs/                         # Tabs functions library
-│   ├── tab0.py
-│   ├── tab1.py
-│   ├── tab2.py
-│   ├── tab3.py
-│   ├── tab4.py
-│   ├── tab5.py
-│   └── tab6.py
-├── artifacts/                    # Contains model and dataset files
-│   ├── svd_model.pkl             # Trained SVD model
-│   ├── knn_model.pkl            # Trained KNN model
-│   ├── book_df.pkl              # Book DataFrame
-│   └── book_titles.pkl          # Titles of the books
-├── data/                         # Raw and cleaned datasets
-│   ├── dataset.csv              # Raw dataset with book info
-│   ├── Ratings.csv              # Ratings data
-│   ├── dataset_with_details.csv # Extended dataset
-│   ├── cleaned_data.csv         # Preprocessed dataset
-│   ├── Users.csv                # User data
-│   └── Books.csv                # Book data
-├── scrapper/                     # Scraping scripts
-│   ├── scrapper.py              # Main scraping script
-│   └── scrapper_cache_check.py  # Script to verify cached data
-├── notebooks/                    # Jupyter notebooks for model training and analysis
-│   ├── base.ipynb               # Basic EDA notebook
-├── Dockerfile                    # Docker configuration file
-├── train.py                      # Script for training the recommendation model
-├── requirements.txt              # Dependencies for the project
-├── runtime.txt                   # Specifies Python version for deployment
-├── README.md                     # Project documentation
-├── LICENSE                       # License information
-└── .gitignore                    # Git ignore file
+```mermaid
+graph TD
+    A[API OpenLibrary] --> B[Dataset Builder]
+    B --> C[Enhanced Dataset JSON]
+    C --> D[CSV Enrichi]
+    D --> E[SVD Training]
+    E --> F[Modèle SVD]
+    
+    C --> G[KNN Dynamic]
+    F --> H[Recommandations Utilisateur]
+    G --> I[Recommandations Similarité]
+    
+    H --> J[Interface Streamlit]
+    I --> J
+    
+    style A fill:#e1f5fe
+    style J fill:#f3e5f5
+    style F fill:#e8f5e8
+    style G fill:#fff3e0
 ```
 
-### Description of Key Files
+---
 
-- **artifacts/**: Contains all the generated artifacts from the training process, including the trained models and processed data.
-- **data/**: Directory for raw and cleaned datasets.
-- **scrapper/**: Contains the scraping scripts used to collect book and user data.
-- **notebooks/**: Jupyter notebooks for exploratory data analysis (EDA) and model training.
-- **Dockerfile**: Used for containerizing the application.
-- **app.py**: The main application file for deploying the recommendation engine.
-- **requirements.txt**: Lists all the Python dependencies required for the project.
-- **runtime.txt**: Specifies the runtime environment for deployment (e.g., Python version).
-- **train.py**: A standalone Python script for training the recommendation engine model.
+## 🛠️ Technologies Utilisées
+
+### **Machine Learning & Data Science**
+- **Python 3.11** - Langage principal
+- **scikit-learn** - Algorithmes ML (KNN, TF-IDF, StandardScaler)
+- **scikit-surprise** - Factorisation matricielle SVD
+- **pandas** - Manipulation de données
+- **numpy** - Calcul scientifique
+
+### **Interface & Visualisation**
+- **Streamlit** - Interface web interactive
+- **Plotly** - Visualisations interactives
+- **HTML/CSS** - Personnalisation de l'interface
+
+### **APIs & Données**
+- **OpenLibrary API** - Métadonnées des livres
+- **requests** - Appels API HTTP
+- **json** - Manipulation de données JSON
+
+### **Déploiement & Infrastructure**
+- **Docker** - Conteneurisation
+- **Hugging Face Spaces** - Hébergement cloud
+- **Git LFS** - Gestion des gros fichiers
+- **GitHub** - Contrôle de version
 
 ---
 
-## 🎨 Screenshots
+## 📊 Méthodologie des Recommandations
 
-### 🌐 Home Page
-![Home Page](https://via.placeholder.com/600x300)
+### **1. SVD Hybride (Recommandations Utilisateur)**
+```python
+Score Final = 60% × SVD + 25% × Genres + 10% × Années + 5% × Éditeurs
+```
 
-### 🔍 Recommendations
-![Recommendations](https://via.placeholder.com/600x300)
+**Processus :**
+1. Analyse des livres notés ≥7 par l'utilisateur
+2. Extraction des genres préférés via TF-IDF
+3. Détection des périodes et éditeurs favoris
+4. Prédiction SVD combinée aux métadonnées
+5. Scoring hybride pondéré
 
-### 🎨 Visualizations
-![Visualizations](https://via.placeholder.com/600x300)
+### **2. KNN Dynamique (Similarité de Livres)**
+```python
+Features = TF-IDF(Auteur + Genres + Description + Éditeur) + Année_normalisée
+Similarité = Cosinus(Features_livre_A, Features_livre_B)
+```
+
+**Processus :**
+1. Vectorisation TF-IDF des features textuelles
+2. Normalisation des features numériques
+3. Calcul de similarité cosinus
+4. Recherche des k plus proches voisins
+5. Recommandations par score de similarité
 
 ---
 
-## ⚖️ License
+## 🚀 Installation et Utilisation
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+### **Prérequis**
+- Python 3.11+
+- Git
+- Docker (optionnel)
+
+### **Installation locale**
+
+1. **Cloner le repository**
+```bash
+git clone https://github.com/votre-username/Book_recommender.git
+cd Book_recommender
+```
+
+2. **Créer un environnement virtuel**
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# ou
+.venv\Scripts\activate     # Windows
+```
+
+3. **Installer les dépendances**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Entraîner le modèle SVD**
+```bash
+python train.py
+```
+
+5. **Lancer l'application**
+```bash
+streamlit run app.py
+```
+
+### **Utilisation avec Docker**
+
+```bash
+# Construire l'image
+docker build -t book-recommender .
+
+# Lancer le conteneur
+docker run -p 8501:8501 book-recommender
+```
+
+### **Déploiement sur Hugging Face Spaces**
+
+1. Créer un nouveau Space sur [Hugging Face](https://huggingface.co/spaces)
+2. Choisir "Streamlit" comme SDK
+3. Pousser le code vers le repository HF
+4. Le déploiement se fait automatiquement
 
 ---
 
-Thank you for exploring the Book Recommender System! 🚀
+## 📁 Structure du Projet
+
+```
+book_recommender/
+├── 📱 INTERFACE UTILISATEUR
+│   ├── app.py                      # Point d'entrée principal
+│   └── tabs/
+│       ├── tab0.py                 # Authentification
+│       ├── tab_svd.py              # Recommandations utilisateur
+│       ├── tab_bookstore_demo.py   # Recommandations similarité
+│       └── tab_dataset_builder.py  # Gestion dataset
+│
+├── 🤖 MOTEURS DE RECOMMANDATION
+│   ├── utils.py                    # SVD hybride
+│   ├── knn_dynamic.py              # KNN dynamique
+│   └── train.py                    # Entraînement SVD
+│
+├── 🏗️ CONSTRUCTION DONNÉES
+│   ├── dataset_builder.py          # Construction dataset pour le KNN
+│   └── api_utils.py                # Interface OpenLibrary
+│
+├── 📊 DONNÉES
+│   ├── data/
+│   │   ├── enhanced_dataset_with_descriptions.json (créé avec le dataset_builder pour le KNN)
+│   │   └── dataset_enriched_full.csv (pour le SVD)
+│   └── artifacts/
+│       ├── svd_model.pkl
+│       ├── book_df.pkl
+│       └── book_titles.pkl
+│
+└── 🔧 CONFIGURATION
+    ├── requirements.txt
+    ├── Dockerfile
+    └── README.md
+```
+
+---
+
+## 🎯 Étapes de Développement
+
+### **Phase 1 : Préparation des Données**
+1. **Collecte** via API OpenLibrary
+2. **Nettoyage** et déduplication
+3. **Enrichissement** avec métadonnées
+4. **Validation** et formatage
+
+### **Phase 2 : Développement des Algorithmes**
+1. **Implémentation SVD** avec scikit-surprise
+2. **Développement KNN** avec scikit-learn
+3. **Système hybride** combinant SVD + métadonnées
+4. **Optimisation** des performances
+
+### **Phase 3 : Interface Utilisateur**
+1. **Conception** de l'interface Streamlit
+2. **Développement** des onglets interactifs
+3. **Intégration** des moteurs de recommandation
+4. **Tests** et validation UX
+
+### **Phase 4 : Déploiement**
+1. **Conteneurisation** Docker
+2. **Optimisation** pour production
+3. **Déploiement** sur Hugging Face Spaces
+4. **Monitoring** et maintenance
+
+---
+
+## 📈 Métriques de Performance
+
+### **Modèle SVD**
+- **RMSE** : ~0.85 (sur échelle 1-10)
+- **MAE** : ~0.67
+- **Temps d'entraînement** : ~2 minutes (42k ratings)
+- **Temps de prédiction** : ~50ms par utilisateur
+
+### **KNN Dynamique**
+- **Similarité cosinus** : 0.3-0.95
+- **Temps de recommandation** : ~100ms
+- **Couverture** : 100% des livres du dataset
+- **Diversité** : Score moyen 0.7/1.0
+
+### **Dataset**
+- **Livres** : 4,317 livres enrichis
+- **Utilisateurs** : 3,217 utilisateurs uniques
+- **Ratings** : 42,331 évaluations
+- **Métadonnées** : 70% couverture complète
+
+---
+
+## 🔧 Configuration et Personnalisation
+
+### **Paramètres SVD Hybride**
+```python
+# Dans utils.py
+HYBRID_WEIGHTS = {
+    'svd_score': 0.60,      # Poids SVD
+    'genre_score': 0.25,    # Poids genres
+    'year_score': 0.10,     # Poids années
+    'publisher_score': 0.05 # Poids éditeurs
+}
+```
+
+### **Paramètres KNN**
+```python
+# Dans knn_dynamic.py
+KNN_CONFIG = {
+    'n_neighbors': 10,
+    'metric': 'cosine',
+    'algorithm': 'brute'
+}
+```
+
+---
+
+## 🐛 Dépannage
+
+### **Problèmes courants**
+
+#### **"Modèle SVD non trouvé"**
+```bash
+# Solution : Entraîner le modèle
+python train.py
+```
+
+#### **"Dataset KNN vide"**
+```bash
+# Solution : Vérifier le JSON
+python -c "from knn_dynamic import get_dynamic_knn; print(get_dynamic_knn().get_dataset_stats())"
+```
+
+#### **"Erreur API OpenLibrary"**
+```bash
+# Solution : Vérifier la connexion
+python -c "from api_utils import get_api_client; get_api_client().test_connection()"
+```
+
+### **Logs et Debugging**
+```bash
+# Activer les logs détaillés
+export STREAMLIT_LOGGER_LEVEL=debug
+streamlit run app.py
+```
+
+
+## 📞 Contact
+
+- **Auteur** : [Florent LEBRUN]
+- **Email** : [flebrun67@gmail.com]
+- **LinkedIn** : [www.linkedin.com/in/f-lebrun1989]
+- **Portfolio** : [(https://github.com/FLebrun-67)]
+
+---
+
+## 🔗 Liens Utiles
+
+- [🚀 **Démo Live**](https://huggingface.co/spaces/Beltzark/Book-recommender)
+- [📖 **Documentation API**](https://openlibrary.org/developers/api)
+- [🎓 **Cours ML**](https://www.jedha.co/)
+- [📚 **Ressources Streamlit**](https://docs.streamlit.io/)
+
+---
+
+<div align="center">
+
+**⭐ Si ce projet vous a été utile, n'hésitez pas à lui donner une étoile ! ⭐**
+
+Made with ❤️ and lots of ☕
+
+</div>
