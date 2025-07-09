@@ -5,3 +5,4 @@ pandas
 scikit-learn==1.5.2
 plotly
 scikit-surprise==1.1.4
+joblib

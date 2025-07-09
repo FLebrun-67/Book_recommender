@@ -132,3 +132,12 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+trash/
+analyse_enriched.py
+dataset_enricher.py
+notebooks/
+scrapper/
+svd_hybrid.py
+train2.py
+test.ipynb

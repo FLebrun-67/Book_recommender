@@ -1,37 +1,93 @@
-""" Trains a book recommender system using a KNN model. """
+""" 
+Trains a book recommender system using enriched dataset.
+Focuses on SVD training with enriched metadata support.
+"""
 
 import os
 import pickle
 import pandas as pd
-import numpy as np
 from scipy.sparse import coo_matrix
-from scipy.sparse import issparse
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import normalize
 from surprise import Dataset
 from surprise import Reader
 from surprise import SVD
-#from surprise.model_selection import GridSearchCV
 from surprise.model_selection import train_test_split
-#from surprise.accuracy import rmse, mae
 from surprise import accuracy
 
 
 def load_data(file_path):
-    """Loads the dataset from a CSV file."""
-    print("Step 1: Loading data...")
-    data = pd.read_csv(file_path)
-    print(f"Data loaded with {data.shape[0]} rows and {data.shape[1]} columns.")
+    """Loads the enriched dataset from a CSV file."""
+    print("Step 1: Loading enriched data...")
+    
+    # Essayer d'abord le dataset enrichi, sinon fallback sur l'original
+    if os.path.exists(file_path):
+        data = pd.read_csv(file_path)
+        print(f"✅ Enriched data loaded: {data.shape[0]} rows, {data.shape[1]} columns.")
+        
+        # Vérifier les colonnes d'enrichissement
+        enriched_columns = ['subject_string_final', 'api_cover_url', 'api_first_publish_year', 'api_publisher_string']
+        available_enriched = [col for col in enriched_columns if col in data.columns]
+        
+        if available_enriched:
+            print(f"🌟 Enriched columns found: {available_enriched}")
+            
+            # Statistiques d'enrichissement
+            if 'api_enriched' in data.columns:
+                api_count = data['api_enriched'].sum()
+                print(f"📊 API enriched records: {api_count}")
+            
+            if 'used_fallback' in data.columns:
+                fallback_count = data['used_fallback'].sum()
+                print(f"🔄 Fallback records: {fallback_count}")
+            
+            if 'subject_string_final' in data.columns:
+                with_subjects = (data['subject_string_final'].notna() & (data['subject_string_final'] != '')).sum()
+                print(f"🏷️ Records with subjects: {with_subjects} ({(with_subjects/len(data)*100):.1f}%)")
+        else:
+            print("⚠️ No enriched columns found, using original dataset")
+    else:
+        print(f"❌ File not found: {file_path}")
+        # Fallback vers le dataset original
+        fallback_path = "./data/dataset_final3.csv"
+        if os.path.exists(fallback_path):
+            print(f"🔄 Falling back to: {fallback_path}")
+            data = pd.read_csv(fallback_path)
+        else:
+            raise FileNotFoundError(f"Neither {file_path} nor {fallback_path} found")
+    
     return data
 
 
 def data_overview(data):
-    """Prints an overview of the data."""
+    """Prints an overview of the enriched data."""
     print("\nStep 2: Data overview...")
-    print(data.head())
-    print("\nData information:")
-    print(data.info())
+    print(f"📊 Dataset shape: {data.shape}")
+    print(f"📚 Unique books: {data['Book-Title'].nunique()}")
+    print(f"👥 Unique users: {data['User-ID'].nunique()}")
+    print(f"⭐ Rating range: {data['Book-Rating'].min():.1f} - {data['Book-Rating'].max():.1f}")
+    print(f"📈 Average rating: {data['Book-Rating'].mean():.2f}")
+    
+    # Informations sur les colonnes enrichies
+    enriched_info = {}
+    if 'subject_string_final' in data.columns:
+        subjects_count = (data['subject_string_final'].notna() & (data['subject_string_final'] != '')).sum()
+        enriched_info['Subjects'] = f"{subjects_count} ({subjects_count/len(data)*100:.1f}%)"
+    
+    if 'api_cover_url' in data.columns:
+        covers_count = (data['api_cover_url'].notna() & (data['api_cover_url'] != '')).sum()
+        enriched_info['Cover URLs'] = f"{covers_count} ({covers_count/len(data)*100:.1f}%)"
+    
+    if 'api_first_publish_year' in data.columns:
+        years_count = data['api_first_publish_year'].notna().sum()
+        enriched_info['Publish Years'] = f"{years_count} ({years_count/len(data)*100:.1f}%)"
+    
+    if 'api_publisher_string' in data.columns:
+        publishers_count = (data['api_publisher_string'].notna() & (data['api_publisher_string'] != '')).sum()
+        enriched_info['Publishers'] = f"{publishers_count} ({publishers_count/len(data)*100:.1f}%)"
+    
+    if enriched_info:
+        print("\n🌟 Enriched metadata coverage:")
+        for key, value in enriched_info.items():
+            print(f"   {key}: {value}")
 
 
 def create_user_item_matrix(data):
@@ -44,124 +100,198 @@ def create_user_item_matrix(data):
     print(f"User-item matrix created with dimensions: {sparse_matrix.shape}.")
     return sparse_matrix, data["Book-Title"].astype("category").cat.categories
 
-def preprocess_data_for_knn(data):
-    """Preprocesses the dataset by grouping books by ISBN for KNN."""
-    print("\nStep 1.1: Preprocessing data for KNN...")
-    data_grouped = data.groupby("ISBN").agg({
-    "Book-Title": "first",
-    "Book-Author": "first",
-    "Final_Tags": lambda x: ", ".join(set(x.dropna())),  # Concaténer les tags uniques
-    "Book-Rating": "mean",  # Moyenne des notes
-    "Cluster_hdbscan": "first"
-}).reset_index()
-    return data_grouped
-
-def train_knn_model_with_metadata(data):
-    """Trains a KNN model using metadata (tags + authors)"""
-    print("\nStep 4: Initializing and training the enriched KNN model (with tags and authors)...")
-    
-    # Vectorization of tags and authors
-    data["Final_Tags"] = data["Final_Tags"].fillna("")
-    data["Book-Author"] = data["Book-Author"].fillna("")
-
-    tfidf_authors = TfidfVectorizer(stop_words="english", max_features=100)
-    X_authors = tfidf_authors.fit_transform(data["Book-Author"]).toarray()
-
-    X_numeric = data[["Book-Rating"]].fillna(data["Book-Rating"]).to_numpy()
-
-    X_clusters = data[["Cluster_hdbscan"]].to_numpy()
-
-    if issparse(X_authors):  # Vérifie si c'est une matrice sparse
-        X_authors = X_authors.toarray()  # Convertit en array dense
-
-    # Combine all features
-    X_final = np.hstack((X_authors, X_numeric, X_clusters))
-    print(f"Feature matrix created with shape: {X_final.shape}")
-
-    # Normalisation L2 de la matrice X_final
-    X_final_normalized = normalize(X_final, norm='l2')
-
-    # Train the KNN model
-    knn_model = NearestNeighbors(metric="manhattan", algorithm="brute", n_neighbors=10)
-    knn_model.fit(X_final_normalized)
-    print("Enriched KNN model trained successfully.")
-    return knn_model, X_final_normalized
-
 
 def train_svd_model(data):
-    """Trains on SVD model using surprise library"""
-    print("\nStep 6: Training the SVD model ... ")
-    reader = Reader(rating_scale=(data['Book-Rating'].min(), data['Book-Rating'].max()))
-    data = Dataset.load_from_df(data[['User-ID', 'Book-Title', 'Book-Rating']], reader)
+    """Trains SVD model using surprise library with enriched data."""
+    print("\nStep 4: Training the SVD model with enriched dataset...")
     
-    trainset, testset = train_test_split(data, test_size=0.2, random_state=42)
-
-    svd = SVD(n_factors=50, lr_all=0.005, reg_all=0.02)  # Paramètres optimisés
+    # Préparer les données pour Surprise
+    reader = Reader(rating_scale=(data['Book-Rating'].min(), data['Book-Rating'].max()))
+    dataset = Dataset.load_from_df(data[['User-ID', 'Book-Title', 'Book-Rating']], reader)
+    
+    # Split train/test
+    trainset, testset = train_test_split(dataset, test_size=0.2, random_state=42)
+    
+    # Initialiser le modèle SVD avec paramètres optimisés
+    svd = SVD(
+        n_factors=50,      # Nombre de facteurs latents
+        lr_all=0.005,      # Learning rate
+        reg_all=0.02,      # Régularisation
+        n_epochs=20,       # Nombre d'époques
+        random_state=42    # Pour la reproductibilité
+    )
+    
+    print("🏃‍♂️ Training SVD model...")
     svd.fit(trainset)
-
+    
+    # Évaluation du modèle
+    print("📊 Evaluating model performance...")
+    
     # Évaluer sur l'ensemble d'entraînement
     train_predictions = svd.test(trainset.build_testset())
     train_rmse = accuracy.rmse(train_predictions, verbose=False)
     train_mae = accuracy.mae(train_predictions, verbose=False)
-
+    
     # Évaluer sur l'ensemble de test
     test_predictions = svd.test(testset)
     test_rmse = accuracy.rmse(test_predictions, verbose=False)
     test_mae = accuracy.mae(test_predictions, verbose=False)
-
-    # Résultats des performances
-    comparison_results = pd.DataFrame({
-        "Ensemble": ["Entraînement", "Test"],
-        "RMSE": [train_rmse, test_rmse],
-        "MAE": [train_mae, test_mae]
-    })
-
-    comparison_results
-
+    
+    # Afficher les résultats
+    print("\n📈 Model Performance:")
+    print(f"   Training   - RMSE: {train_rmse:.4f}, MAE: {train_mae:.4f}")
+    print(f"   Test       - RMSE: {test_rmse:.4f}, MAE: {test_mae:.4f}")
+    
+    # Vérifier le surapprentissage
+    rmse_diff = test_rmse - train_rmse
+    if rmse_diff > 0.5:
+        print(f"⚠️  Possible overfitting detected (RMSE diff: {rmse_diff:.4f})")
+    else:
+        print(f"✅ Good generalization (RMSE diff: {rmse_diff:.4f})")
+    
     return svd
 
+
 def save_artifacts(artifacts_path, **artifacts):
-    """Saves artifacts to the specified directory."""
-    print("\nStep 7: Saving artifacts...")
+    """Saves artifacts to the specified directory with enriched naming."""
+    print(f"\nStep 5: Saving artifacts to {artifacts_path}...")
     os.makedirs(artifacts_path, exist_ok=True)
+    
+    saved_files = []
     for name, artifact in artifacts.items():
         file_path = os.path.join(artifacts_path, f"{name}.pkl")
         with open(file_path, "wb") as f:
             pickle.dump(artifact, f)
-            print(f"{name} saved to '{file_path}'.")
+            saved_files.append(f"{name}.pkl")
+            print(f"✅ {name} saved to '{file_path}'")
+    
+    print(f"\n📁 Total files saved: {len(saved_files)}")
+    return saved_files
+
+
+def validate_dataset_for_recommendations(data):
+    """Validates that the dataset is suitable for recommendations."""
+    print("\nStep 6: Validating dataset for recommendations...")
+    
+    # Vérifications de base
+    min_users = 10
+    min_books = 10
+    min_ratings_per_user = 2
+    min_ratings_per_book = 2
+    
+    unique_users = data['User-ID'].nunique()
+    unique_books = data['Book-Title'].nunique()
+    
+    print("📊 Basic validation:")
+    print(f"   Users: {unique_users} (min required: {min_users})")
+    print(f"   Books: {unique_books} (min required: {min_books})")
+    
+    # Vérifier la distribution des ratings
+    user_rating_counts = data.groupby('User-ID').size()
+    book_rating_counts = data.groupby('Book-Title').size()
+    
+    users_with_enough_ratings = (user_rating_counts >= min_ratings_per_user).sum()
+    books_with_enough_ratings = (book_rating_counts >= min_ratings_per_book).sum()
+    
+    print(f"   Users with ≥{min_ratings_per_user} ratings: {users_with_enough_ratings}")
+    print(f"   Books with ≥{min_ratings_per_book} ratings: {books_with_enough_ratings}")
+    
+    # Vérifier la sparsité
+    total_possible_ratings = unique_users * unique_books
+    actual_ratings = len(data)
+    sparsity = (1 - actual_ratings / total_possible_ratings) * 100
+    
+    print(f"   Matrix sparsity: {sparsity:.2f}%")
+    
+    # Validation des colonnes enrichies
+    if 'subject_string_final' in data.columns:
+        books_with_subjects = (data['subject_string_final'].notna() & 
+                              (data['subject_string_final'] != '')).sum()
+        print(f"   Books with subjects: {books_with_subjects} ({books_with_subjects/len(data)*100:.1f}%)")
+    
+    warnings = []
+    if unique_users < min_users:
+        warnings.append(f"Too few users ({unique_users} < {min_users})")
+    if unique_books < min_books:
+        warnings.append(f"Too few books ({unique_books} < {min_books})")
+    if sparsity > 99.5:
+        warnings.append(f"Very sparse matrix ({sparsity:.2f}%)")
+    
+    if warnings:
+        print(f"⚠️  Warnings: {', '.join(warnings)}")
+    else:
+        print("✅ Dataset validation passed")
+    
+    return len(warnings) == 0
 
 
 def main():
-    """Main function to train the book recommender system."""
-    # File paths
-    data_file_path = "./data/dataset_final3.csv"   # cleaned_data.csv
+    """Main function to train the book recommender system with enriched data."""
+    print("🚀 Starting enhanced book recommender training...")
+    
+    # File paths - priorité au dataset enrichi
+    enriched_data_path = "./data/dataset_enriched_full.csv"
+    fallback_data_path = "./data/dataset_final3.csv"
     artifacts_path = "artifacts/"
-
+    
+    # Déterminer quel dataset utiliser
+    if os.path.exists(enriched_data_path):
+        data_file_path = enriched_data_path
+        is_enriched = True
+        print(f"📁 Using enriched dataset: {data_file_path}")
+    else:
+        data_file_path = fallback_data_path
+        is_enriched = False
+        print(f"📁 Using original dataset: {data_file_path}")
+        print("💡 Tip: Run dataset_enricher.py to create enriched dataset")
+    
     # Load and inspect data
     book_df = load_data(data_file_path)
     data_overview(book_df)
-    book_df_knn = preprocess_data_for_knn(book_df)
-
-
-    _ , book_titles = create_user_item_matrix(book_df)
-
-    # Train KNN model & SVD model
-    # Train KNN model with metadata
-    knn_model, X_final_normalized = train_knn_model_with_metadata(book_df_knn)
+    
+    # Validate dataset
+    is_valid = validate_dataset_for_recommendations(book_df)
+    if not is_valid:
+        print("⚠️  Dataset validation warnings detected, but continuing...")
+    
+    # Create user-item matrix
+    _, book_titles = create_user_item_matrix(book_df)
+    
+    # Train SVD model
     svd_model = train_svd_model(book_df)
-
+    
+    # Prepare artifacts to save
+    artifacts_to_save = {
+        'svd_model': svd_model,
+        'book_titles': book_titles,
+        'book_df': book_df,  # Le dataset utilisé (enrichi ou non)
+    }
+    
+    # Ajouter des métadonnées sur l'enrichissement
+    training_metadata = {
+        'is_enriched': is_enriched,
+        'dataset_path': data_file_path,
+        'training_date': pd.Timestamp.now().isoformat(),
+        'enriched_columns': [col for col in ['subject_string_final', 'api_cover_url', 
+                                           'api_first_publish_year', 'api_publisher_string'] 
+                           if col in book_df.columns]
+    }
+    artifacts_to_save['training_metadata'] = training_metadata
+    
     # Save artifacts
-    save_artifacts(
-        artifacts_path,
-        knn_model=knn_model,
-        svd_model=svd_model,
-        book_titles=book_titles,
-        X_final=X_final_normalized,
-        book_df=book_df,
-        book_df_knn=book_df_knn
-    )
-
-    print("\nScript completed successfully.")
+    saved_files = save_artifacts(artifacts_path, **artifacts_to_save)
+    
+    # Final summary
+    print("\n🎉 Training completed successfully!")
+    print(f"📊 Model trained on {len(book_df):,} ratings")
+    print(f"📚 Covering {book_df['Book-Title'].nunique():,} unique books")
+    print(f"👥 From {book_df['User-ID'].nunique():,} unique users")
+    
+    if is_enriched:
+        print(f"🌟 Enhanced with {len(training_metadata['enriched_columns'])} enriched features")
+    
+    print(f"💾 Artifacts saved: {', '.join(saved_files)}")
+    print("\n🚀 Ready to run: streamlit run app.py")
 
 
 if __name__ == "__main__":
