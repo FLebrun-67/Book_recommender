@@ -640,14 +640,14 @@ def show_enhanced_dataset_builder():
     st.info(f"📚 **Objectif total: {total_objective} livres**")
     
     # Chargement dataset existant
-    if os.path.exists("enhanced_dataset_with_descriptions.json"):
+    if os.path.exists("data/enhanced_dataset_with_descriptions.json"):
         st.subheader("📂 Dataset existant détecté")
         
         col1, col2 = st.columns(2)
         with col1:
             if st.button("📂 Charger dataset amélioré", key="load_enhanced"):
                 with st.spinner("Chargement..."):
-                    if builder.load_dataset("enhanced_dataset_with_descriptions.json"):
+                    if builder.load_dataset("data/enhanced_dataset_with_descriptions.json"):
                         st.rerun()
         
         with col2:
@@ -656,7 +656,7 @@ def show_enhanced_dataset_builder():
                 st.rerun()
     
     # Construction
-    if not os.path.exists("enhanced_dataset_with_descriptions.json") or st.session_state.get('rebuild_confirmed_enhanced', False):
+    if not os.path.exists("data/enhanced_dataset_with_descriptions.json") or st.session_state.get('rebuild_confirmed_enhanced', False):
         
         st.subheader("🚀 Lancement de la construction améliorée")
         
@@ -685,7 +685,7 @@ def show_enhanced_dataset_builder():
                     )
                     
                     # Sauvegarder automatiquement
-                    if builder.save_dataset("enhanced_dataset_with_descriptions.json"):
+                    if builder.save_dataset("data/enhanced_dataset_with_descriptions.json"):
                         st.balloons()
                         st.success("🎉 Construction améliorée terminée avec succès!")
                     

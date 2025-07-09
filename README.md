@@ -26,24 +26,57 @@ Ce projet implémente un **système de recommandation de livres hybride** qui co
 
 ```mermaid
 graph TD
-    A[API OpenLibrary] --> B[Dataset Builder]
-    B --> C[Enhanced Dataset JSON]
-    C --> D[CSV Enrichi]
-    D --> E[SVD Training]
-    E --> F[Modèle SVD]
+    A[API OpenLibrary] --> B[Dataset Builder KNN]
+    A --> C[Dataset Enricher SVD]
     
-    C --> G[KNN Dynamic]
-    F --> H[Recommandations Utilisateur]
-    G --> I[Recommandations Similarité]
+    B --> D[enhanced_dataset_with_descriptions.json]
+    C --> E[dataset_enriched_full.csv]
     
-    H --> J[Interface Streamlit]
-    I --> J
+    E --> F[SVD Training]
+    F --> G[Modèle SVD]
+    
+    D --> H[KNN Dynamic]
+    
+    G --> I[Recommandations Utilisateur SVD]
+    H --> J[Recommandations Similarité KNN]
+    
+    I --> K[Interface Streamlit]
+    J --> K
     
     style A fill:#e1f5fe
-    style J fill:#f3e5f5
-    style F fill:#e8f5e8
-    style G fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#e8f5e8
+    style G fill:#e8f5e8
+    style H fill:#fff3e0
+    style K fill:#f3e5f5
 ```
+
+### **Flux de Données Détaillé**
+
+#### **Branche SVD (Recommandations Utilisateur)**
+1. **API OpenLibrary** → Collecte des métadonnées
+2. **Dataset Enricher** → Enrichit avec genres, années, éditeurs
+3. **CSV Enrichi** → Format : `[User-ID, Book-Title, Book-Rating, métadonnées...]`
+4. **Entraînement SVD** → Factorisation matricielle
+5. **Modèle SVD** → Prédictions utilisateur-livre
+
+#### **Branche KNN (Recommandations par Similarité)**
+1. **API OpenLibrary** → Collecte en temps réel
+2. **Dataset Builder** → Construction dynamique par genres
+3. **JSON Enrichi** → Format : `[{title, author, subjects, description...}]`
+4. **KNN Dynamic** → Calcul de similarité cosinus
+5. **Recommandations** → Top-K livres similaires
+
+### **Pourquoi Deux Datasets ?**
+
+| Aspect | SVD (CSV) | KNN (JSON) |
+|--------|-----------|------------|
+| **Objectif** | Relations User-Item-Rating | Métadonnées riches des livres |
+| **Structure** | Tabulaire fixe | Objets flexibles |
+| **Construction** | Batch (une fois) | Dynamique (temps réel) |
+| **Stockage** | DataFrame pandas | Liste d'objets Python |
+| **Sauvegarde** | CSV optimisé | JSON pour flexibilité |
+
 
 ---
 
