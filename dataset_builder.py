@@ -6,16 +6,15 @@ import streamlit as st
 import time
 import pandas as pd
 from typing import Dict, List
-import json
 import os
 import random
 
 class ImprovedDatasetBuilder:
-    """Constructeur de dataset amélioré avec algorithme optimisé"""
+    """Constructeur de dataset avec algorithme optimisé"""
     
     def __init__(self, enable_descriptions: bool = True):
         """
-        Initialise le constructeur de dataset amélioré
+        Initialise le constructeur de dataset
         
         Args:
             enable_descriptions (bool): Active/désactive la récupération des descriptions
@@ -575,25 +574,20 @@ class ImprovedDatasetBuilder:
 # ============================================================================
 
 def show_enhanced_dataset_builder():
-    """Interface Streamlit pour le dataset builder amélioré"""
+    """Interface Streamlit pour le dataset builder"""
     
-    st.header("🚀 Construction de Dataset Améliorée v2.0")
-    st.markdown("### Algorithme optimisé pour collecter 7000+ livres avec descriptions")
+    st.header("🚀 Construction de Dataset")
+    st.markdown("### Algorithme optimisé pour collecter le plus de livres avec descriptions possibles")
     
     # Améliorations apportées
     with st.subheader("🆕 Nouveautés de cette version"):
         st.markdown("""
         **🔧 Améliorations algorithmiques:**
-        - ✅ **+500% de termes de recherche** par genre (vs ancienne version)
         - ✅ **Déduplication intelligente** avec nettoyage des titres
         - ✅ **Système de retry** avec variantes de requêtes
         - ✅ **Cache des descriptions** pour éviter les requêtes répétées
         - ✅ **Pagination améliorée** avec randomisation
         - ✅ **Détection de genre flexible** (sci-fi = science fiction)
-        
-        **📊 Objectifs révisés:**
-        - Fantasy: 1500 → Romance: 1200 → Thriller: 800 → Horror: 400
-        - **Total: 8000 livres** (vs 7000 avant)
         """)
     
     # Initialiser le builder amélioré

@@ -1,6 +1,5 @@
 import streamlit as st
 from utils import load_model_and_data
-from tabs.tab0 import show_login
 from tabs.tab_svd import show_user_recommendations
 from tabs.tab3 import show_search_tab
 from tabs.tab4 import show_about_tab
