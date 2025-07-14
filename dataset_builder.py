@@ -26,10 +26,10 @@ class ImprovedDatasetBuilder:
         
         # Configuration des genres cibles (plus réaliste)
         self.target_genres = {
-            "Fantasy": 1500,
-            "Science Fiction": 1500, 
-            "Mystery": 1200,
-            "Romance": 1200,
+            "Fantasy": 1000,
+            "Science Fiction": 1000, 
+            "Mystery": 800,
+            "Romance": 800,
             "Historical Fiction": 800,
             "Thriller": 800,
             "Adventure": 600,
@@ -355,7 +355,7 @@ class ImprovedDatasetBuilder:
     
     def build_comprehensive_dataset_enhanced(self, progress_callback=None):
         """
-        Version améliorée de construction du dataset
+        construction du dataset
         """
         if self.enable_descriptions:
             st.info("🔍 **Mode descriptions activé** - Construction optimisée")

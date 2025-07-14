@@ -13,6 +13,10 @@ from surprise import SVD
 from surprise.model_selection import train_test_split
 from surprise import accuracy
 
+import mlflow
+import mlflow.sklearn
+import time
+
 
 def load_data(file_path):
     """Loads the enriched dataset from a CSV file."""
@@ -102,54 +106,103 @@ def create_user_item_matrix(data):
 
 
 def train_svd_model(data):
-    """Trains SVD model using surprise library with enriched data."""
-    print("\nStep 4: Training the SVD model with enriched dataset...")
+    """Trains SVD model using surprise library with MLflow tracking."""
+    print("\nStep 4: Training the SVD model with MLflow tracking...")
     
-    # Préparer les données pour Surprise
+    # Préparer les données pour Surprise (TON CODE EXISTANT)
     reader = Reader(rating_scale=(data['Book-Rating'].min(), data['Book-Rating'].max()))
     dataset = Dataset.load_from_df(data[['User-ID', 'Book-Title', 'Book-Rating']], reader)
     
-    # Split train/test
+    # Split train/test (TON CODE EXISTANT)
     trainset, testset = train_test_split(dataset, test_size=0.2, random_state=42)
     
-    # Initialiser le modèle SVD avec paramètres optimisés
-    svd = SVD(
-        n_factors=50,      # Nombre de facteurs latents
-        lr_all=0.005,      # Learning rate
-        reg_all=0.02,      # Régularisation
-        n_epochs=20,       # Nombre d'époques
-        random_state=42    # Pour la reproductibilité
-    )
+    # ✨ NOUVEAU : Configuration MLflow
+    mlflow.set_experiment("Book_Recommender_SVD")
     
-    print("🏃‍♂️ Training SVD model...")
-    svd.fit(trainset)
-    
-    # Évaluation du modèle
-    print("📊 Evaluating model performance...")
-    
-    # Évaluer sur l'ensemble d'entraînement
-    train_predictions = svd.test(trainset.build_testset())
-    train_rmse = accuracy.rmse(train_predictions, verbose=False)
-    train_mae = accuracy.mae(train_predictions, verbose=False)
-    
-    # Évaluer sur l'ensemble de test
-    test_predictions = svd.test(testset)
-    test_rmse = accuracy.rmse(test_predictions, verbose=False)
-    test_mae = accuracy.mae(test_predictions, verbose=False)
-    
-    # Afficher les résultats
-    print("\n📈 Model Performance:")
-    print(f"   Training   - RMSE: {train_rmse:.4f}, MAE: {train_mae:.4f}")
-    print(f"   Test       - RMSE: {test_rmse:.4f}, MAE: {test_mae:.4f}")
-    
-    # Vérifier le surapprentissage
-    rmse_diff = test_rmse - train_rmse
-    if rmse_diff > 0.5:
-        print(f"⚠️  Possible overfitting detected (RMSE diff: {rmse_diff:.4f})")
-    else:
-        print(f"✅ Good generalization (RMSE diff: {rmse_diff:.4f})")
-    
-    return svd
+    with mlflow.start_run(run_name="SVD_Training"):
+        print("📊 MLflow tracking started...")
+        
+        # Paramètres du modèle (TON CODE EXISTANT mais organisé)
+        model_params = {
+            "n_factors": 50,
+            "lr_all": 0.005,
+            "reg_all": 0.02,
+            "n_epochs": 20,
+            "random_state": 42
+        }
+        
+        # ✨ NOUVEAU : Log des hyperparamètres
+        mlflow.log_params(model_params)
+        
+        # ✨ NOUVEAU : Log des infos dataset
+        dataset_info = {
+            "total_ratings": len(data),
+            "unique_users": data['User-ID'].nunique(),
+            "unique_books": data['Book-Title'].nunique(),
+            "rating_min": float(data['Book-Rating'].min()),
+            "rating_max": float(data['Book-Rating'].max()),
+            "test_size": 0.2
+        }
+        mlflow.log_params(dataset_info)
+        
+        # Initialiser le modèle SVD (TON CODE EXISTANT)
+        svd = SVD(
+            n_factors=model_params["n_factors"],
+            lr_all=model_params["lr_all"],
+            reg_all=model_params["reg_all"],
+            n_epochs=model_params["n_epochs"],
+            random_state=model_params["random_state"]
+        )
+        
+        print("🏃‍♂️ Training SVD model...")
+        
+        # ✨ NOUVEAU : Mesurer le temps d'entraînement
+        start_time = time.time()
+        svd.fit(trainset)
+        training_time = time.time() - start_time
+        
+        # Évaluation du modèle (TON CODE EXISTANT)
+        print("📊 Evaluating model performance...")
+        
+        # Évaluer sur l'ensemble d'entraînement
+        train_predictions = svd.test(trainset.build_testset())
+        train_rmse = accuracy.rmse(train_predictions, verbose=False)
+        train_mae = accuracy.mae(train_predictions, verbose=False)
+        
+        # Évaluer sur l'ensemble de test
+        test_predictions = svd.test(testset)
+        test_rmse = accuracy.rmse(test_predictions, verbose=False)
+        test_mae = accuracy.mae(test_predictions, verbose=False)
+        
+        # ✨ NOUVEAU : Log des métriques dans MLflow
+        metrics = {
+            "train_rmse": float(train_rmse),
+            "train_mae": float(train_mae),
+            "test_rmse": float(test_rmse),
+            "test_mae": float(test_mae),
+            "training_time_seconds": float(training_time),
+            "overfitting_diff": float(test_rmse - train_rmse)
+        }
+        mlflow.log_metrics(metrics)
+        
+        # Afficher les résultats (TON CODE EXISTANT)
+        print("\n📈 Model Performance:")
+        print(f"   Training   - RMSE: {train_rmse:.4f}, MAE: {train_mae:.4f}")
+        print(f"   Test       - RMSE: {test_rmse:.4f}, MAE: {test_mae:.4f}")
+        print(f"   Training time: {training_time:.2f} seconds")
+        
+        # Vérifier le surapprentissage (TON CODE EXISTANT)
+        rmse_diff = test_rmse - train_rmse
+        if rmse_diff > 0.5:
+            print(f"⚠️  Possible overfitting detected (RMSE diff: {rmse_diff:.4f})")
+        else:
+            print(f"✅ Good generalization (RMSE diff: {rmse_diff:.4f})")
+        
+        # ✨ NOUVEAU : Afficher l'URL MLflow
+        print(f"\n📊 MLflow tracking URI: {mlflow.get_tracking_uri()}")
+        print("💡 Run 'mlflow ui' in terminal to view results")
+        
+        return svd
 
 
 def save_artifacts(artifacts_path, **artifacts):

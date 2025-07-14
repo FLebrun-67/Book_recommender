@@ -12,6 +12,11 @@ import streamlit as st
 from api_utils import get_api_client
 from typing import List, Dict, Tuple
 
+import mlflow
+import mlflow.sklearn
+import time
+
+
 class DynamicKNNRecommender:
     """
     Système de recommandation KNN dynamique utilisant l'API Open Library
@@ -136,49 +141,119 @@ class DynamicKNNRecommender:
     
     def _fit_model(self):
         """
-        Entraîne le modèle KNN avec les données actuelles
+        Entraîne le modèle KNN avec les données actuelles + MLflow tracking
         """
         try:
             if len(self.books_data) < 5:
                 return
+        
+        # ✨ NOUVEAU : Configuration MLflow pour KNN
+            mlflow.set_experiment("Book_Recommender_KNN")
+        
+            with mlflow.start_run(run_name="KNN_Training"):
+                print("📊 KNN MLflow tracking started...")
             
-            # Préparer les données
-            df = pd.DataFrame(self.books_data)
+                # ✨ Mesurer le temps total d'entraînement
+                start_time = time.time()
             
-            # Features textuelles (ignorer le type checking IDE)
-            author_sparse = self.author_vectorizer.fit_transform(df['author_string'])
-            subject_sparse = self.subject_vectorizer.fit_transform(df['subject_string'])
-            publisher_sparse = self.publisher_vectorizer.fit_transform(df['publisher_string'])
-            description_sparse = self.description_vectorizer.fit_transform(df['description'])
+                # Préparer les données (TON CODE EXISTANT)
+                df = pd.DataFrame(self.books_data)
             
-            # Convertir en arrays denses
-            author_features = author_sparse.toarray() 
-            subject_features = subject_sparse.toarray()  
-            publisher_features = publisher_sparse.toarray()
-            description_features = description_sparse.toarray()
+                # ✨ Log des paramètres du dataset
+                dataset_params = {
+                    "total_books": len(self.books_data),
+                    "unique_authors": df['author_string'].nunique(),
+                    "avg_description_length": df['description'].str.len().mean(),
+                    "books_with_subjects": (df['subject_string'] != '').sum()
+                }
+                mlflow.log_params(dataset_params)
             
-            # Features numériques avec gestion des types
-            years = df['first_publish_year'].fillna(2000).astype(int)
-            numeric_features = self.numeric_scaler.fit_transform(years.values.reshape(-1, 1))  # type: ignore
+                # ✨ Paramètres des vectorizers (TON CODE mais organisé)
+                vectorizer_params = {
+                    "author_max_features": 50,
+                    "subject_max_features": 300,
+                    "description_max_features": 200,
+                    "publisher_max_features": 30,
+                    "knn_neighbors": min(10, len(self.books_data) - 1),
+                    "knn_metric": "cosine",
+                    "knn_algorithm": "brute"
+                }
+                mlflow.log_params(vectorizer_params)
             
-            # Combiner toutes les features
-            self.feature_matrix = np.hstack([
-                author_features,
-                subject_features, 
-                publisher_features,
-                description_features,
-                numeric_features
-            ])
+                # Features textuelles (TON CODE EXISTANT)
+                vectorization_start = time.time()
             
-            # Entraîner le modèle KNN avec gestion des types
-            self.knn_model = NearestNeighbors(
-                n_neighbors=min(10, len(self.books_data) - 1),
-                metric='cosine',
-                algorithm='brute'
-            )
+                author_sparse = self.author_vectorizer.fit_transform(df['author_string'])
+                subject_sparse = self.subject_vectorizer.fit_transform(df['subject_string'])
+                publisher_sparse = self.publisher_vectorizer.fit_transform(df['publisher_string'])
+                description_sparse = self.description_vectorizer.fit_transform(df['description'])
             
-            self.knn_model.fit(self.feature_matrix)  # type: ignore
-            self.is_fitted = True
+                vectorization_time = time.time() - vectorization_start
+            
+                # Convertir en arrays denses (TON CODE EXISTANT)
+                author_features = author_sparse.toarray() 
+                subject_features = subject_sparse.toarray()  
+                publisher_features = publisher_sparse.toarray()
+                description_features = description_sparse.toarray()
+            
+                # Features numériques (TON CODE EXISTANT)
+                years = df['first_publish_year'].fillna(2000).astype(int)
+                numeric_features = self.numeric_scaler.fit_transform(years.values.reshape(-1, 1))
+            
+                # Combiner toutes les features (TON CODE EXISTANT)
+                feature_combination_start = time.time()
+            
+                self.feature_matrix = np.hstack([
+                    author_features,
+                    subject_features, 
+                    publisher_features,
+                    description_features,
+                    numeric_features
+                ])
+            
+                feature_combination_time = time.time() - feature_combination_start
+            
+                # Entraîner le modèle KNN (TON CODE EXISTANT)
+                knn_training_start = time.time()
+            
+                self.knn_model = NearestNeighbors(
+                    n_neighbors=vectorizer_params["knn_neighbors"],
+                    metric=vectorizer_params["knn_metric"],
+                    algorithm=vectorizer_params["knn_algorithm"]
+                )   
+            
+                self.knn_model.fit(self.feature_matrix)
+                self.is_fitted = True
+            
+                knn_training_time = time.time() - knn_training_start
+                total_training_time = time.time() - start_time
+            
+                # ✨ NOUVEAU : Log des métriques de performance
+                performance_metrics = {
+                    "total_training_time": total_training_time,
+                    "vectorization_time": vectorization_time,
+                    "feature_combination_time": feature_combination_time,
+                    "knn_fitting_time": knn_training_time,
+                    "feature_matrix_shape_rows": self.feature_matrix.shape[0],
+                    "feature_matrix_shape_cols": self.feature_matrix.shape[1],
+                    "feature_density": np.count_nonzero(self.feature_matrix) / self.feature_matrix.size
+                }
+                mlflow.log_metrics(performance_metrics)
+            
+                # ✨ NOUVEAU : Log des métriques de qualité des features
+                feature_quality = {
+                    "author_vocab_size": len(self.author_vectorizer.vocabulary_),
+                    "subject_vocab_size": len(self.subject_vectorizer.vocabulary_),
+                    "description_vocab_size": len(self.description_vectorizer.vocabulary_),
+                    "publisher_vocab_size": len(self.publisher_vectorizer.vocabulary_),
+                    "avg_year": float(years.mean()),
+                    "year_std": float(years.std())
+                }
+                mlflow.log_metrics(feature_quality)
+            
+                print(f"✅ KNN model trained in {total_training_time:.2f}s")
+                print(f"📊 Feature matrix: {self.feature_matrix.shape}")
+                print(f"📊 MLflow tracking URI: {mlflow.get_tracking_uri()}")
             
         except Exception as e:
             st.error(f"Erreur lors de l'entraînement du modèle: {str(e)}")

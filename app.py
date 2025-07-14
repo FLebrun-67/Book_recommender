@@ -25,10 +25,60 @@ try:
     # Simple vérification que les données sont chargées
     total_books = books_df['Book-Title'].nunique()
     total_users = books_df['User-ID'].nunique()
+
+    st.sidebar.divider()
+    st.sidebar.header("👤 User Login")
+
+    # Initialize session state
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = "Guest user"
+
+    # User selection
+    user_ids = ["Guest user"] + list(books_df["User-ID"].unique())
+
+    # Selectbox dans la sidebar
+    selected_user = st.sidebar.selectbox(
+        "Choose a user:",
+        options=user_ids,
+        index=user_ids.index(st.session_state.user_id),
+        key="sidebar_user_selector"
+    )
+
+    # Mettre à jour l'état si changement
+    if selected_user != st.session_state.user_id:
+        st.session_state.user_id = selected_user
+        # Initialiser l'historique pour le nouvel utilisateur
+        if "history" not in st.session_state:
+            st.session_state["history"] = []
+
+    # Affichage de l'utilisateur actuel
+    if st.session_state.user_id == "Guest user":
+        st.sidebar.info("👋 Welcome, Guest!")
+        st.sidebar.write("Select a user to get personalized recommendations")
+    else:
+        st.sidebar.success(f"✅ Logged in as: **{st.session_state.user_id}**")
     
-    st.sidebar.success("✅ Dataset loaded!")
-    st.sidebar.metric("📚 Books", f"{total_books:,}")
-    st.sidebar.metric("👥 Users", f"{total_users:,}")
+        # Afficher quelques stats utilisateur dans la sidebar
+        user_data = books_df[books_df["User-ID"] == st.session_state.user_id]
+        if not user_data.empty:
+            user_stats = {
+                "Books rated": len(user_data),
+                "Average rating": f"{user_data['Book-Rating'].mean():.1f}",
+                "Favorite genre": user_data.groupby('Book-Title').first().get('Final_Tags', 'N/A') if 'Final_Tags' in books_df.columns else 'N/A'
+            }
+        
+            st.sidebar.write("**📊 Your stats:**")
+            for key, value in user_stats.items():
+                if key != "Favorite genre":  # Éviter l'erreur si Final_Tags n'existe pas
+                    st.sidebar.write(f"- {key}: {value}")
+
+    # Bouton de déconnexion
+    if st.session_state.user_id != "Guest user":
+        if st.sidebar.button("🚪 Logout", key="logout_btn"):
+            st.session_state.user_id = "Guest user"
+            st.rerun()
+
+    st.sidebar.divider()
 
 except Exception as e:
     st.error(f"❌ Error loading data: {e}")
@@ -47,8 +97,7 @@ if "active_tab" not in st.session_state:
 
 # Tabs for different sections
 login_tab = f"Logout / {st.session_state.user_id}" if st.session_state.user_id != "Guest user" else "Login / Guest"
-tab0, tabsvd, tab_bookstore, tab3, tab5, tab6, tab_api, tab4 = st.tabs([
-    "🦄" + login_tab,
+tabsvd, tab_bookstore, tab3, tab5, tab6, tab_api, tab4 = st.tabs([
     "🧑‍💻 My Recommendations",
     "📚 Recommendations by books",
     "🔍 Search",
@@ -59,9 +108,6 @@ tab0, tabsvd, tab_bookstore, tab3, tab5, tab6, tab_api, tab4 = st.tabs([
 ])
 
 # Tab contents
-with tab0:  # Onglet de connexion / login
-    show_login(books_df)
-
 with tabsvd:
     show_user_recommendations(books_df, svd_model)
 

@@ -141,3 +141,4 @@ scrapper/
 svd_hybrid.py
 train2.py
 test.ipynb
+mlruns/
