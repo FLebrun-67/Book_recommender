@@ -429,10 +429,12 @@ class ImprovedDatasetBuilder:
                 
                 if validation['valid']:
                     cleaned_book = self._finalize_book_data(book)
-                    cleaned_book['quality_score'] = validation['score']
-                    quality_books.append(cleaned_book)
-                    self.seen_books.add(unique_key)
-                    self.quality_stats['quality_passed'] += 1
+                
+                    if cleaned_book is not None:
+                        cleaned_book['quality_score'] = validation['score']
+                        quality_books.append(cleaned_book)
+                        self.seen_books.add(unique_key)
+                        self.quality_stats['quality_passed'] += 1
                     
                     if self.verbose and len(quality_books) % 5 == 0:
                         self._log(f"    📚 Collectés: {len(quality_books)}/{limit}")
@@ -521,10 +523,84 @@ class ImprovedDatasetBuilder:
     
         return book
     
-    def _finalize_book_data(self, book: Dict) -> Dict:
-        """Finalise les données du livre (inchangé)"""
-        # ... (même code que votre version actuelle)
-        return self._clean_book_data(book)
+    def _finalize_book_data(self, book: Dict) -> Dict | None:
+        """
+        Finalise et nettoie les données d'un livre pour le dataset builder.
+        Cette fonction fait le nettoyage spécifique au dataset builder avec validation stricte.
+    
+        Args:
+        book (Dict): Dictionnaire contenant les données brutes du livre
+        
+        Returns:
+        Dict: Dictionnaire avec les données nettoyées et standardisées
+        None: Si les données sont insuffisantes
+        """
+        try:
+            # Vérifier que les champs obligatoires existent
+            title = book.get('title', '').strip()
+            author = book.get('author_string', '').strip()
+        
+            # Si titre ou auteur manquent, rejeter le livre
+            if not title or not author:
+                return None
+        
+            # Récupérer et nettoyer la description
+            description = ""
+            if 'description' in book and book['description']:
+                description = str(book['description']).strip()
+            elif 'subject_string' in book and book['subject_string']:
+                # Utiliser les sujets comme description de fallback
+                description = str(book['subject_string']).strip()
+        
+            # Nettoyer et valider l'année de publication
+            year = book.get('first_publish_year')
+            if year:
+                try:
+                    year = int(year)
+                    # Valider l'année (entre 1000 et année actuelle + 5)
+                    if year < 1000 or year > 2030:
+                        year = None
+                except (ValueError, TypeError):
+                    year = None
+        
+            # Nettoyer les données des éditeurs
+            publishers = book.get('publishers', [])
+            if isinstance(publishers, list):
+                publisher_string = ', '.join(str(p).strip() for p in publishers if p)
+            else:
+                publisher_string = str(publishers).strip() if publishers else ''
+        
+            # Construire le dictionnaire final
+            cleaned_book = {
+                'title': title,
+                'author_string': author,
+                'subject_string': book.get('subject_string', '').strip(),
+                'description': description,
+                'publisher_string': publisher_string,
+                'first_publish_year': year,
+                'isbn': book.get('isbn', '').strip(),
+                'cover_url': book.get('cover_url', '').strip(),
+                'key': book.get('key', '').strip()
+            }
+        
+            # Vérifier qu'on a au minimum titre, auteur et un champ descriptif
+            has_descriptive_content = (
+                cleaned_book['subject_string'] or 
+                cleaned_book['description'] or 
+                cleaned_book['publisher_string']
+            )
+        
+            if not has_descriptive_content:
+                # Pas assez de contenu descriptif pour les recommandations
+                return None
+        
+            return cleaned_book
+        
+        except Exception as e:
+            # En cas d'erreur, logger et retourner None
+            if hasattr(self, '_log'):
+                self._log(f"Erreur lors du nettoyage du livre: {str(e)}", "ERROR")
+            return None
     
     def _clean_book_data(self, book: Dict) -> Dict:
         """Nettoyage des données (inchangé)"""
