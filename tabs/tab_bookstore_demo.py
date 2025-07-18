@@ -12,11 +12,22 @@ def show_bookstore_demo():
     st.markdown("### Système de recommandation basé sur l'API Open Library")
     
     try:
-        # Obtenir l'instance du KNN
-        knn = get_dynamic_knn()
+        import json
+        with open("data/enhanced_dataset_with_descriptions.json", 'r', encoding='utf-8') as f:
+            json_data = json.load(f)
+            books_data = json_data.get('books_data', [])
         
-        # Afficher les statistiques actuelles
-        stats = knn.get_dataset_stats()
+        knn = get_dynamic_knn()
+        knn.books_data = books_data #on charge les données du JSON
+
+        if len(books_data) >= 5:
+            knn._fit_model()
+
+        stats={
+            'total_books': len(books_data),
+            'unique_authors': len(set(book.get('author_string', '') for book in books_data)),
+            'is_model_fitted': len(books_data) > 0
+        }
         
         # Afficher les statistiques en colonnes
         col1, col2, col3 = st.columns(3)

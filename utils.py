@@ -2,6 +2,7 @@ import pickle
 import pandas as pd
 import streamlit as st
 import numpy as np
+import json
 from typing import List, Tuple, Dict
 from collections import Counter
 
@@ -12,7 +13,18 @@ def load_model_and_data():
     books_df = pickle.load(open("artifacts/book_df.pkl", "rb"))  # Dataset enrichi
     svd_model = pickle.load(open('artifacts/svd_model.pkl', 'rb'))
 
-    return None, book_titles, books_df, svd_model, None, None
+    books_df['Rating-Count'] = books_df.groupby('Book-Title')['Book-Rating'].transform('count')
+
+    try:
+        with open("data/enhanced_dataset_with_descriptions.json", 'r', encoding='utf-8') as f:
+            json_data = json.load(f)
+            knn_books_data = json_data.get('books_data', [])
+            print(f"✅ Dataset JSON chargé: {len(knn_books_data)} livres pour KNN")
+    except FileNotFoundError:
+        print("⚠️ Fichier JSON non trouvé, KNN utilisera un dataset vide")
+        knn_books_data = []
+
+    return None, book_titles, books_df, svd_model, None, knn_books_data
 
 def fetch_poster(books_df, book_list):
     """Fetch poster URLs prioritizing API cover URLs."""
@@ -63,11 +75,6 @@ def get_combined_genres(row) -> List[str]:
     # Priorité 1: subject_string_final (API + fallback)
     if pd.notna(row.get('subject_string_final', '')) and row.get('subject_string_final', '') != '':
         tags = [tag.strip() for tag in str(row['subject_string_final']).split(',')]
-        all_genres.extend(tags)
-    
-    # Priorité 2: Final_Tags originaux si rien trouvé
-    elif pd.notna(row.get('Final_Tags', '')) and row.get('Final_Tags', '') != '':
-        tags = [tag.strip() for tag in str(row['Final_Tags']).split(',')]
         all_genres.extend(tags)
     
     # Nettoyer et dédupliquer

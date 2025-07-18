@@ -142,3 +142,8 @@ svd_hybrid.py
 train2.py
 test.ipynb
 mlruns/
+test_metrics.py
+diagnostic_dataset.py
+diagnostic_dataset.png
+isbn_cache.json
+test_get_api.py

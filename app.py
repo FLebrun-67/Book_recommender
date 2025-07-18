@@ -7,7 +7,6 @@ from tabs.tab5 import show_popular_books
 from tabs.tab6 import show_top_rated_books
 from tabs.tab_test_api import show_test_api_tab
 from tabs.tab_bookstore_demo import show_bookstore_demo
-from tabs.tab_dataset_builder import show_dataset_builder_tab
 
 # Configure the Streamlit app
 st.set_page_config(
@@ -37,7 +36,7 @@ try:
 
     # Selectbox dans la sidebar
     selected_user = st.sidebar.selectbox(
-        "Choose a user:",
+        "Choisi un utilisateur:",
         options=user_ids,
         index=user_ids.index(st.session_state.user_id),
         key="sidebar_user_selector"
@@ -52,8 +51,8 @@ try:
 
     # Affichage de l'utilisateur actuel
     if st.session_state.user_id == "Guest user":
-        st.sidebar.info("👋 Welcome, Guest!")
-        st.sidebar.write("Select a user to get personalized recommendations")
+        st.sidebar.info("👋 Bienvenue!")
+        st.sidebar.write("Sélectionne un utilisateur pour avoir des recommandations personnalisés")
     else:
         st.sidebar.success(f"✅ Logged in as: **{st.session_state.user_id}**")
     
@@ -81,12 +80,12 @@ try:
 
 except Exception as e:
     st.error(f"❌ Error loading data: {e}")
-    st.info("💡 Make sure your artifacts are properly generated")
+    st.info("💡 Soyez sur que vos artefacts soient proprement chargés")
     st.stop()
 
 # Title and introduction
 st.title("📚 Book Recommender System")
-st.markdown("### Find your next favorite book with our recommendation system!")
+st.markdown("### Trouvé votre prochain livre favoris avec notre système de recommandation!")
 
 # Initialize session state
 if 'user_id' not in st.session_state:
@@ -97,13 +96,13 @@ if "active_tab" not in st.session_state:
 # Tabs for different sections
 login_tab = f"Logout / {st.session_state.user_id}" if st.session_state.user_id != "Guest user" else "Login / Guest"
 tabsvd, tab_bookstore, tab3, tab5, tab6, tab_api, tab4 = st.tabs([
-    "🧑‍💻 My Recommendations",
-    "📚 Recommendations by books",
-    "🔍 Search",
-    "📈 Popular books",
-    "⭐ Top-Rated books",
+    "🧑‍💻 Mes recommandations utilisateurs",
+    "📚 Recommandations par livres",
+    "🔍 Recherche",
+    "📈 Livres populaires",
+    "⭐ Les livres les mieux notés",
     "🧪 Test API",
-    "📊 About"
+    "📊 Note"
 ])
 
 # Tab contents
@@ -133,10 +132,6 @@ with tab4:
 st.divider()
 st.markdown("---")
 
-# Section Dataset Builder (en dessous des onglets)
-with st.expander("🏗️ **Dataset Builder** - Configuration du système", expanded=False):
-    st.markdown("### Gestion du dataset pour les recommandations")
-    show_dataset_builder_tab()
 
 # Footer
 FOOTER_HTML = """

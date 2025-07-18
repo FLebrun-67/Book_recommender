@@ -6,7 +6,7 @@
 
 import streamlit as st
 import pandas as pd
-from api_utils import search_books_streamlit, get_book_details_streamlit
+from book_recommender.api_utils import search_books_streamlit, get_book_details_streamlit
 
 def show_test_api_tab():
     """Onglet de test pour l'API Open Library"""

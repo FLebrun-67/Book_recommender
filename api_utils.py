@@ -1,8 +1,15 @@
 import requests
 import time
-import streamlit as st
 from typing import Dict, List, Optional
 import pandas as pd
+
+# Import conditionnel de Streamlit
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    st = None  # Pour éviter les warnings de l'éditeur
+    STREAMLIT_AVAILABLE = False
 
 class OpenLibraryAPI:
     """Classe pour gérer les appels à l'API Open Library"""
@@ -10,29 +17,23 @@ class OpenLibraryAPI:
     def __init__(self):
         self.base_url = "https://openlibrary.org"
         self.session = requests.Session()
-        #ajout d'un délai entre les requests
+        # Délai entre les requests
         self.request_delay = 0.1
     
-    def get_book_by_isbn(self, isbn:str) -> Optional[Dict]:
+    def get_book_by_isbn(self, isbn: str) -> Optional[Dict]:
         """
         Récupère les informations d'un livre par son ISBN
-        
-        Args:
-            isbn (str): Le numéro ISBN du livre
-            
-        Returns:
-            Dict: Dictionnaire contenant les infos du livre ou None si non trouvé
         """
         try:
-            #Nettoyage de l'ISBN (enlever tirets et espaces)
+            # Nettoyage de l'ISBN (enlever tirets et espaces)
             clean_isbn = isbn.replace("-", "").replace(" ", "")
 
-            #Url de l'API avec jscmd=data pour avoir toutes les infos
+            # URL de l'API avec jscmd=data pour avoir toutes les infos
             url = f"{self.base_url}/api/books"
             params = {
                 'bibkeys': f'ISBN:{clean_isbn}',
                 'jscmd': 'data',
-                'format':'json'
+                'format': 'json'
             }
 
             response = self.session.get(url, params=params)
@@ -47,7 +48,10 @@ class OpenLibraryAPI:
                 return None
         
         except Exception as e:
-            st.error(f"Erreur lors de la récupération du livre {isbn}: {str(e)}")
+            if STREAMLIT_AVAILABLE and st is not None:
+                st.error(f"Erreur lors de la récupération du livre {isbn}: {str(e)}")
+            else:
+                print(f"Erreur lors de la récupération du livre {isbn}: {str(e)}")
             return None
         
         finally:
@@ -57,13 +61,6 @@ class OpenLibraryAPI:
     def search_books(self, query: str, limit: int = 10) -> List[Dict]:
         """
         Recherche des livres par titre, auteur, etc.
-        
-        Args:
-            query (str): Terme de recherche
-            limit (int): Nombre max de résultats
-            
-        Returns:
-            List[Dict]: Liste des livres trouvés
         """
         try:
             url = f"{self.base_url}/search.json"
@@ -87,7 +84,10 @@ class OpenLibraryAPI:
             return books
             
         except Exception as e:
-            st.error(f"Erreur lors de la recherche: {str(e)}")
+            if STREAMLIT_AVAILABLE and st is not None:
+                st.error(f"Erreur lors de la recherche: {str(e)}")
+            else:
+                print(f"Erreur lors de la recherche: {str(e)}")
             return []
         
         finally:
@@ -96,12 +96,6 @@ class OpenLibraryAPI:
     def _parse_book_data(self, book_data: Dict) -> Dict:
         """
         Parse les données détaillées d'un livre (API books)
-        
-        Args:
-            book_data (Dict): Données brutes de l'API
-            
-        Returns:
-            Dict: Données formatées pour notre système
         """
         # Extraire les auteurs
         authors = []
@@ -118,7 +112,7 @@ class OpenLibraryAPI:
         if 'publishers' in book_data:
             publishers = [pub.get('name', '') for pub in book_data['publishers']]
         
-        # Classification Dewey (très utile pour le KNN)
+        # Classification Dewey
         dewey_classes = []
         if 'classifications' in book_data and 'dewey_decimal_class' in book_data['classifications']:
             dewey_classes = book_data['classifications']['dewey_decimal_class']
@@ -132,9 +126,9 @@ class OpenLibraryAPI:
         formatted_book = {
             'title': book_data.get('title', ''),
             'authors': authors,
-            'author_string': ', '.join(authors),  # Pour TF-IDF
+            'author_string': ', '.join(authors),
             'subjects': subjects,
-            'subject_string': ', '.join(subjects),  # Pour TF-IDF
+            'subject_string': ', '.join(subjects),
             'publishers': publishers,
             'publisher_string': ', '.join(publishers),
             'publish_date': book_data.get('publish_date', ''),
@@ -152,12 +146,6 @@ class OpenLibraryAPI:
     def _parse_search_result(self, doc: Dict) -> Dict:
         """
         Parse les résultats de recherche
-        
-        Args:
-            doc (Dict): Document de résultat de recherche
-            
-        Returns:
-            Dict: Données formatées
         """
         # Récupérer le premier ISBN disponible
         isbn = None
@@ -184,23 +172,44 @@ class OpenLibraryAPI:
         
         return formatted_book
 
-# Fonction utilitaire pour créer une instance cachée
-@st.cache_resource
-def get_api_client():
-    """Crée une instance cachée du client API"""
-    return OpenLibraryAPI()
 
-# Fonctions helper pour l'utilisation dans Streamlit
+# Instance globale pour le cache simple (quand Streamlit n'est pas disponible)
+_api_client_instance = None
+
+def get_api_client():
+    """
+    Crée une instance cachée du client API
+    Compatible Streamlit ET standalone
+    """
+    if STREAMLIT_AVAILABLE and st is not None:
+        # Utiliser le cache Streamlit si disponible
+        return _get_cached_client()
+    else:
+        # Utiliser le cache global pour standalone
+        global _api_client_instance
+        if _api_client_instance is None:
+            _api_client_instance = OpenLibraryAPI()
+        return _api_client_instance
+
+# Définition conditionnelle unique de la fonction cachée
+if STREAMLIT_AVAILABLE and st is not None:
+    @st.cache_resource
+    def _get_cached_client():
+        """Version cachée pour Streamlit"""
+        return OpenLibraryAPI()
+else:
+    def _get_cached_client():
+        """Fallback si pas de Streamlit"""
+        global _api_client_instance
+        if _api_client_instance is None:
+            _api_client_instance = OpenLibraryAPI()
+        return _api_client_instance
+
+
+# Fonctions helper pour compatibilité
 def search_books_streamlit(query: str, limit: int = 10) -> pd.DataFrame:
     """
     Recherche des livres et retourne un DataFrame pandas
-    
-    Args:
-        query (str): Terme de recherche
-        limit (int): Nombre de résultats
-        
-    Returns:
-        pd.DataFrame: DataFrame contenant les livres
     """
     api = get_api_client()
     books = api.search_books(query, limit)
@@ -212,32 +221,41 @@ def search_books_streamlit(query: str, limit: int = 10) -> pd.DataFrame:
 
 def get_book_details_streamlit(isbn: str) -> Optional[Dict]:
     """
-    Récupère les détails d'un livre par ISBN pour Streamlit
-    
-    Args:
-        isbn (str): ISBN du livre
-        
-    Returns:
-        Dict: Informations détaillées du livre
+    Récupère les détails d'un livre par ISBN
     """
     api = get_api_client()
     return api.get_book_by_isbn(isbn)
 
+
+# Test de connexion
+def test_connection():
+    """Teste la connexion à l'API OpenLibrary"""
+    try:
+        api = get_api_client()
+        results = api.search_books("test", 1)
+        return len(results) > 0
+    except Exception as e:
+        if STREAMLIT_AVAILABLE and st is not None:
+            st.error(f"Erreur de connexion API: {e}")
+        else:
+            print(f"Erreur de connexion API: {e}")
+        return False
+
+
 # Exemple d'utilisation
 if __name__ == "__main__":
-    # Test de l'API
-    api = OpenLibraryAPI()
+    print("🧪 Test de l'API universelle...")
     
+    # Test de connexion
+    if test_connection():
+        print("✅ Connexion API OK")
+    else:
+        print("❌ Problème de connexion API")
+        
     # Test recherche
-    print("=== Test de recherche ===")
-    results = api.search_books("harry potter", limit=3)
+    api = get_api_client()
+    results = api.search_books("python programming", 3)
+    print(f"📚 Trouvé {len(results)} livres pour 'python programming'")
+    
     for book in results:
         print(f"- {book['title']} par {book['author_string']}")
-    
-    # Test récupération par ISBN
-    print("\n=== Test récupération par ISBN ===")
-    book = api.get_book_by_isbn("9780747532699")  # Harry Potter
-    if book:
-        print(f"Titre: {book['title']}")
-        print(f"Auteurs: {book['author_string']}")
-        print(f"Sujets: {book['subject_string']}")

@@ -4,7 +4,7 @@ import pandas as pd
 import random
 import sys
 sys.path.append('..')
-from api_utils import get_api_client
+from book_recommender.api_utils import get_api_client
 
 @st.fragment
 def show_search_tab():

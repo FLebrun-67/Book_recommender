@@ -122,19 +122,17 @@ def train_svd_model(data):
     with mlflow.start_run(run_name="SVD_Training"):
         print("📊 MLflow tracking started...")
         
-        # Paramètres du modèle (TON CODE EXISTANT mais organisé)
+        # Paramètres du modèle
         model_params = {
-            "n_factors": 50,
+            "n_factors": 35,
             "lr_all": 0.005,
-            "reg_all": 0.02,
-            "n_epochs": 20,
+            "reg_all": 0.1,
+            "n_epochs": 15,
             "random_state": 42
         }
         
-        # ✨ NOUVEAU : Log des hyperparamètres
         mlflow.log_params(model_params)
         
-        # ✨ NOUVEAU : Log des infos dataset
         dataset_info = {
             "total_ratings": len(data),
             "unique_users": data['User-ID'].nunique(),
@@ -145,7 +143,6 @@ def train_svd_model(data):
         }
         mlflow.log_params(dataset_info)
         
-        # Initialiser le modèle SVD (TON CODE EXISTANT)
         svd = SVD(
             n_factors=model_params["n_factors"],
             lr_all=model_params["lr_all"],
@@ -156,12 +153,10 @@ def train_svd_model(data):
         
         print("🏃‍♂️ Training SVD model...")
         
-        # ✨ NOUVEAU : Mesurer le temps d'entraînement
         start_time = time.time()
         svd.fit(trainset)
         training_time = time.time() - start_time
         
-        # Évaluation du modèle (TON CODE EXISTANT)
         print("📊 Evaluating model performance...")
         
         # Évaluer sur l'ensemble d'entraînement
@@ -174,7 +169,6 @@ def train_svd_model(data):
         test_rmse = accuracy.rmse(test_predictions, verbose=False)
         test_mae = accuracy.mae(test_predictions, verbose=False)
         
-        # ✨ NOUVEAU : Log des métriques dans MLflow
         metrics = {
             "train_rmse": float(train_rmse),
             "train_mae": float(train_mae),
@@ -185,20 +179,18 @@ def train_svd_model(data):
         }
         mlflow.log_metrics(metrics)
         
-        # Afficher les résultats (TON CODE EXISTANT)
         print("\n📈 Model Performance:")
         print(f"   Training   - RMSE: {train_rmse:.4f}, MAE: {train_mae:.4f}")
         print(f"   Test       - RMSE: {test_rmse:.4f}, MAE: {test_mae:.4f}")
         print(f"   Training time: {training_time:.2f} seconds")
         
-        # Vérifier le surapprentissage (TON CODE EXISTANT)
         rmse_diff = test_rmse - train_rmse
         if rmse_diff > 0.5:
             print(f"⚠️  Possible overfitting detected (RMSE diff: {rmse_diff:.4f})")
         else:
             print(f"✅ Good generalization (RMSE diff: {rmse_diff:.4f})")
         
-        # ✨ NOUVEAU : Afficher l'URL MLflow
+        #Afficher l'URL MLflow
         print(f"\n📊 MLflow tracking URI: {mlflow.get_tracking_uri()}")
         print("💡 Run 'mlflow ui' in terminal to view results")
         
@@ -283,8 +275,8 @@ def main():
     print("🚀 Starting enhanced book recommender training...")
     
     # File paths - priorité au dataset enrichi
-    enriched_data_path = "./data/dataset_enriched_full.csv"
-    fallback_data_path = "./data/dataset_final3.csv"
+    enriched_data_path = "./data/Ratings_enriched.csv"
+    fallback_data_path = "./data/Ratings_enriched.csv"
     artifacts_path = "artifacts/"
     
     # Déterminer quel dataset utiliser

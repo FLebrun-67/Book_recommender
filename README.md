@@ -55,7 +55,7 @@ graph TD
 
 #### **Branche SVD (Recommandations Utilisateur)**
 1. **API OpenLibrary** → Collecte des métadonnées
-2. **Dataset Enricher** → Enrichit avec genres, années, éditeurs
+2. **Dataset Enricher** → Enrichit avec genres, années, éditeurs, descriptions
 3. **CSV Enrichi** → Format : `[User-ID, Book-Title, Book-Rating, métadonnées...]`
 4. **Entraînement SVD** → Factorisation matricielle
 5. **Modèle SVD** → Prédictions utilisateur-livre
@@ -121,7 +121,7 @@ Score Final = 60% × SVD + 25% × Genres + 10% × Années + 5% × Éditeurs
 4. Prédiction SVD combinée aux métadonnées
 5. Scoring hybride pondéré
 
-### **2. KNN Dynamique (Similarité de Livres)**
+### **2. KNN (Similarité de Livres)**
 ```python
 Features = TF-IDF(Auteur + Genres + Description + Éditeur) + Année_normalisée
 Similarité = Cosinus(Features_livre_A, Features_livre_B)
@@ -130,9 +130,10 @@ Similarité = Cosinus(Features_livre_A, Features_livre_B)
 **Processus :**
 1. Vectorisation TF-IDF des features textuelles
 2. Normalisation des features numériques
-3. Calcul de similarité cosinus
-4. Recherche des k plus proches voisins
-5. Recommandations par score de similarité
+3. PCA réduction de dimensionalité
+4. Calcul de similarité cosinus
+5. Recherche des k plus proches voisins
+6. Recommandations par score de similarité
 
 ---
 
@@ -187,7 +188,7 @@ docker run -p 8501:8501 book-recommender
 ### **Déploiement sur Hugging Face Spaces**
 
 1. Créer un nouveau Space sur [Hugging Face](https://huggingface.co/spaces)
-2. Choisir "Streamlit" comme SDK
+2. Choisir "Docker" puis "Streamlit" comme SDK
 3. Pousser le code vers le repository HF
 4. Le déploiement se fait automatiquement
 
@@ -200,7 +201,6 @@ book_recommender/
 ├── 📱 INTERFACE UTILISATEUR
 │   ├── app.py                      # Point d'entrée principal
 │   └── tabs/
-│       ├── tab0.py                 # Authentification
 │       ├── tab_svd.py              # Recommandations utilisateur
 │       ├── tab_bookstore_demo.py   # Recommandations similarité
 │       └── tab_dataset_builder.py  # Gestion dataset
@@ -211,13 +211,18 @@ book_recommender/
 │   └── train.py                    # Entraînement SVD
 │
 ├── 🏗️ CONSTRUCTION DONNÉES
+│   ├── KNN:
 │   ├── dataset_builder.py          # Construction dataset pour le KNN
-│   └── api_utils.py                # Interface OpenLibrary
+│   ├── build_dataset.py            
+│   ├── api_utils.py                # Interface OpenLibrary
+│   ├── SVD:
+|   └── Ratings_enriched_optimized.csv      # dataset ratings kaggle avec métadonnées de l'API OpenLibrary
+│
 │
 ├── 📊 DONNÉES
 │   ├── data/
 │   │   ├── enhanced_dataset_with_descriptions.json (créé avec le dataset_builder pour le KNN)
-│   │   └── dataset_enriched_full.csv (pour le SVD)
+│   │   └── Ratings_enriched_optimized.csv (pour le SVD)
 │   └── artifacts/
 │       ├── svd_model.pkl
 │       ├── book_df.pkl

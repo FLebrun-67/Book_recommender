@@ -9,8 +9,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 import streamlit as st
-from api_utils import get_api_client
+#from api_utils import get_api_client
 from typing import List, Dict, Tuple
+from sklearn.decomposition import PCA
 
 import mlflow
 import mlflow.sklearn
@@ -23,13 +24,14 @@ class DynamicKNNRecommender:
     """
     
     def __init__(self):
-        self.api_client = get_api_client()
+        #self.api_client = get_api_client()
+        self.api_client = None
         
         # Vectorizers pour les features textuelles
         self.author_vectorizer = TfidfVectorizer(
             stop_words='english', 
-            max_features=50,
-            ngram_range=(1, 2)
+            max_features=20,
+            ngram_range=(1, 1)
         )
         
         self.subject_vectorizer = TfidfVectorizer(
@@ -54,6 +56,10 @@ class DynamicKNNRecommender:
         # Scaler pour les features numériques
         self.numeric_scaler = StandardScaler()
         
+        #PCA réduction de dimensionalité
+        self.pca = PCA(n_components=80) #réduction à 80 dimensions
+        self.use_pca = True #activation ou désactivation du PCA
+
         # Dataset de livres en mémoire
         self.books_data = []
         self.feature_matrix = None
@@ -110,25 +116,39 @@ class DynamicKNNRecommender:
         """
         Nettoie et enrichit les données d'un livre
         """
+        # DEBUG : Ajouter ces lignes temporaires
+        print(f"🔍 Debug livre: {book.get('title', 'NO TITLE')}")
+        print(f"   Description: '{book.get('description', 'NO DESC')}'")
+        print(f"   Subject: '{book.get('subject_string', 'NO SUBJECT')}'")
+
+        raw_publisher = book.get('publisher_string') or ', '.join(book.get('publishers', []))
+        publisher_str = raw_publisher.strip() or "unknown_publisher"
+    
         # Récupérer la description depuis l'API si disponible
         description = ""
-        if 'description' in book and book['description']:
-            description = str(book['description'])
-        elif 'subject_string' in book:
-            # Utiliser les sujets comme description de fallback
-            description = book['subject_string']
+        if book.get('description', '').strip():
+            description = str(book['description']).strip()
+            print("   ✅ Utilise description")
+        else:
+            description = book.get('subject_string', 'Unknown genre')
+            print(f"   🔄 Utilise subject_string: '{description[:50]}...'")
 
-        return {
+        result = {
             'title': book.get('title', '').strip(),
             'author_string': book.get('author_string', '').strip(),
             'subject_string': book.get('subject_string', '').strip(),
             'description': description.strip(),
-            'publisher_string': ', '.join(book.get('publishers', [])),
+            'publisher_string': publisher_str,
             'first_publish_year': self._safe_int(book.get('first_publish_year')),
             'isbn': book.get('isbn', ''),
             'cover_url': book.get('cover_url', ''),
             'key': book.get('key', '')
         }
+    
+        print(f"   📝 Description finale: '{result['description'][:50]}...'")
+        print("---")
+    
+        return result
     
     def _safe_int(self, value) -> int:
         """Convertit une valeur en int de manière sécurisée"""
@@ -147,19 +167,36 @@ class DynamicKNNRecommender:
             if len(self.books_data) < 5:
                 return
         
-        # ✨ NOUVEAU : Configuration MLflow pour KNN
+        #Configuration MLflow pour KNN
             mlflow.set_experiment("Book_Recommender_KNN")
         
             with mlflow.start_run(run_name="KNN_Training"):
                 print("📊 KNN MLflow tracking started...")
             
-                # ✨ Mesurer le temps total d'entraînement
+                #Mesurer le temps total d'entraînement
                 start_time = time.time()
             
-                # Préparer les données (TON CODE EXISTANT)
+                # Préparer les données 
                 df = pd.DataFrame(self.books_data)
+
+                # -- Nettoyage / valeurs par défaut ----------------------------
+                text_cols = ["author_string", "subject_string", "description", "publisher_string"]
+                for col in text_cols:
+                    df[col] = (df[col].astype(str)
+                        .str.strip()
+                        .replace("", np.nan)
+                        .fillna(f"unknown_{col.split('_')[0]}"))
+
+# S'il n’y a vraiment aucune description, on recycle le subject_string
+                df["description"] = np.where(
+                    (df["description"] == '') | df['description'].isna(),
+                    np.where(
+                        (df['subject_string'] == '') | df['subject_string'].isna(),
+                        df['title'] + ' by ' + df['author_string'],
+                        df['subject_string']
+                    ),
+                    df["description"])
             
-                # ✨ Log des paramètres du dataset
                 dataset_params = {
                     "total_books": len(self.books_data),
                     "unique_authors": df['author_string'].nunique(),
@@ -168,9 +205,9 @@ class DynamicKNNRecommender:
                 }
                 mlflow.log_params(dataset_params)
             
-                # ✨ Paramètres des vectorizers (TON CODE mais organisé)
+                #Paramètres des vectorizers
                 vectorizer_params = {
-                    "author_max_features": 50,
+                    "author_max_features": 20,
                     "subject_max_features": 300,
                     "description_max_features": 200,
                     "publisher_max_features": 30,
@@ -180,30 +217,36 @@ class DynamicKNNRecommender:
                 }
                 mlflow.log_params(vectorizer_params)
             
-                # Features textuelles (TON CODE EXISTANT)
+                # Features textuelles
                 vectorization_start = time.time()
             
                 author_sparse = self.author_vectorizer.fit_transform(df['author_string'])
                 subject_sparse = self.subject_vectorizer.fit_transform(df['subject_string'])
                 publisher_sparse = self.publisher_vectorizer.fit_transform(df['publisher_string'])
-                description_sparse = self.description_vectorizer.fit_transform(df['description'])
+                
+                df['description_clean'] = np.where(
+                    (df['description'] == '') | df['description'].isna(),
+                    df['subject_string'],  # Si vide, utiliser subject_string
+                    df['description']      # Sinon, garder description
+                    )
+                description_sparse = self.description_vectorizer.fit_transform(df['description_clean'])
             
                 vectorization_time = time.time() - vectorization_start
             
-                # Convertir en arrays denses (TON CODE EXISTANT)
-                author_features = author_sparse.toarray() 
+                # Convertir en arrays denses
+                author_features = author_sparse.toarray() * 0.2
                 subject_features = subject_sparse.toarray()  
                 publisher_features = publisher_sparse.toarray()
                 description_features = description_sparse.toarray()
             
-                # Features numériques (TON CODE EXISTANT)
+                # Features numériques
                 years = df['first_publish_year'].fillna(2000).astype(int)
                 numeric_features = self.numeric_scaler.fit_transform(years.values.reshape(-1, 1))
             
-                # Combiner toutes les features (TON CODE EXISTANT)
+                # Combiner toutes les features
                 feature_combination_start = time.time()
             
-                self.feature_matrix = np.hstack([
+                feature_matrix_full = np.hstack([
                     author_features,
                     subject_features, 
                     publisher_features,
@@ -212,8 +255,35 @@ class DynamicKNNRecommender:
                 ])
             
                 feature_combination_time = time.time() - feature_combination_start
-            
-                # Entraîner le modèle KNN (TON CODE EXISTANT)
+
+                #Application du PCA 
+                if self.use_pca:
+                    pca_start = time.time()
+                    print(f"🔄 Avant PCA: {feature_matrix_full.shape[1]} dimensions")
+
+                    self.feature_matrix = self.pca.fit_transform(feature_matrix_full)
+
+                    pca_time = time.time() - pca_start
+                    variance_explained = self.pca.explained_variance_ratio_.sum()
+
+                    print(f"✅ Après PCA: {self.feature_matrix.shape[1]} dimensions")
+                    print(f"📊 Variance expliquée: {variance_explained:.1%}")
+
+                    # Log des métriques PCA
+                    mlflow.log_metrics({
+                        "pca_time": pca_time,
+                        "variance_explained": variance_explained,
+                        "dimensions_before_pca": feature_matrix_full.shape[1],
+                        "dimensions_after_pca": self.feature_matrix.shape[1],
+                        "dimension_reduction_ratio": self.feature_matrix.shape[1] / feature_matrix_full.shape[1]
+                    })
+                
+                else:
+                    self.feature_matrix = feature_matrix_full
+                    print(f"📊 Sans PCA: {self.feature_matrix.shape[1]} dimensions")
+
+
+                # Entraîner le modèle KNN
                 knn_training_start = time.time()
             
                 self.knn_model = NearestNeighbors(
@@ -228,7 +298,7 @@ class DynamicKNNRecommender:
                 knn_training_time = time.time() - knn_training_start
                 total_training_time = time.time() - start_time
             
-                # ✨ NOUVEAU : Log des métriques de performance
+                #Log des métriques de performance
                 performance_metrics = {
                     "total_training_time": total_training_time,
                     "vectorization_time": vectorization_time,
@@ -240,7 +310,7 @@ class DynamicKNNRecommender:
                 }
                 mlflow.log_metrics(performance_metrics)
             
-                # ✨ NOUVEAU : Log des métriques de qualité des features
+                #Log des métriques de qualité des features
                 feature_quality = {
                     "author_vocab_size": len(self.author_vectorizer.vocabulary_),
                     "subject_vocab_size": len(self.subject_vectorizer.vocabulary_),
