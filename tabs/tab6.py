@@ -6,7 +6,7 @@ def show_top_rated_books(books_df):
     """Affiche l'onglet des livres les mieux notés avec améliorations."""
     st.subheader("⭐ Livres les mieux notés")
     
-    # AMÉLIORATION 1: Validation des données
+    # Validation des données
     if books_df.empty:
         st.warning("⚠️ Aucune donnée de livre disponible")
         return
@@ -15,14 +15,14 @@ def show_top_rated_books(books_df):
         st.error("❌ Colonne Book-Rating non trouvée dans le dataset")
         return
     
-    # AMÉLIORATION 2: Options de personnalisation pour l'utilisateur
+    # Options de personnalisation pour l'utilisateur
     col1, col2 = st.columns(2)
     with col1:
         num_books = st.selectbox(
             "Nombre de livres à afficher :",
             options=[5, 10, 15, 20],
             index=1,  # 10 par défaut
-            key="tab6_num_books"  # ← CORRECTION: Clé unique pour éviter les conflits
+            key="tab6_num_books"  
         )
     
     with col2:
@@ -31,10 +31,10 @@ def show_top_rated_books(books_df):
             options=["Note la plus élevée", "Note pondérée (min 5 évaluations)"],
             index=1,  # Note pondérée par défaut (plus fiable)
             help="La note pondérée évite les biais des livres avec peu d'évaluations",
-            key="tab6_rating_method"  # ← CORRECTION: Clé unique
+            key="tab6_rating_method"
         )
     
-    # AMÉLIORATION 3: Logique de tri améliorée
+    # Logique de tri améliorée
     if rating_method == "Note la plus élevée":
         # Méthode simple : tri direct par Book-Rating
         top_rated_books = (
@@ -42,11 +42,9 @@ def show_top_rated_books(books_df):
             .drop_duplicates(subset="Book-Title")
             .head(num_books)
         )
-        metric_label = "note"
-        metric_column = "Book-Rating"
         
     else:
-        # AMÉLIORATION MAJEURE: Note pondérée pour éviter les biais
+        # Note pondérée pour éviter les biais
         if 'Rating-Count' not in books_df.columns:
             st.error("❌ Colonne Rating-Count nécessaire pour la note pondérée")
             return
@@ -63,7 +61,7 @@ def show_top_rated_books(books_df):
             .reset_index()
         )
         
-        # FILTRE IMPORTANT: Minimum 5 évaluations pour être fiable
+        #Minimum 5 évaluations pour être fiable
         min_ratings = st.sidebar.slider(
             "Minimum d'évaluations requises :",
             min_value=3,
@@ -85,27 +83,25 @@ def show_top_rated_books(books_df):
             reliable_books.sort_values(by="Book-Rating", ascending=False)
             .head(num_books)
         )
-        metric_label = "note (fiable)"
-        metric_column = "Book-Rating"
     
-    # AMÉLIORATION 4: Vérification qu'on a des résultats
+    # Vérification qu'on a des résultats
     if top_rated_books.empty:
         st.warning("⚠️ Aucun livre trouvé correspondant aux critères")
         return
     
-    # AMÉLIORATION 5: Information pour l'utilisateur
+    #Information pour l'utilisateur
     if rating_method == "Note pondérée (min 5 évaluations)":
         avg_rating_count = top_rated_books['Rating-Count'].mean()
         st.info(f"📊 Top {len(top_rated_books)} livres les mieux notés (moyenne {avg_rating_count:.1f} évaluations par livre)")
     else:
         st.info(f"📊 Top {len(top_rated_books)} livres par note la plus élevée")
     
-    # AMÉLIORATION 6: Alert si beaucoup de notes parfaites
+    # Alert si beaucoup de notes parfaites
     perfect_ratings = (top_rated_books['Book-Rating'] == 10).sum()
     if perfect_ratings > 7:
         st.warning(f"⚠️ {perfect_ratings} livres ont une note parfaite de 10/10. Considérez la 'Note pondérée' pour plus de variété.")
     
-    # AMÉLIORATION 7: Layout responsive
+    #Layout responsive
     if len(top_rated_books) <= 3:
         num_cols = len(top_rated_books)
     elif len(top_rated_books) <= 5:
@@ -116,7 +112,7 @@ def show_top_rated_books(books_df):
     # Créer les colonnes
     cols = st.columns(num_cols)
     
-    # AMÉLIORATION 8: Affichage avec gestion d'erreurs et métadonnées enrichies
+    #Affichage avec gestion d'erreurs et métadonnées enrichies
     for idx in range(len(top_rated_books)):
         col_idx = idx % num_cols  # Pour gérer les lignes multiples
         
@@ -124,7 +120,7 @@ def show_top_rated_books(books_df):
         try:
             book_title = top_rated_books.iloc[idx]["Book-Title"]
             
-            # AMÉLIORATION 9: Priorité aux images API puis fallback
+            #Priorité aux images API puis fallback
             api_image = top_rated_books.iloc[idx].get("api_cover_url")
             original_image = top_rated_books.iloc[idx].get("Image-URL-L")
             
@@ -135,7 +131,7 @@ def show_top_rated_books(books_df):
             else:
                 book_image = "https://via.placeholder.com/300x400/FFD700/333333?text=Livre+Étoile"
             
-            # AMÉLIORATION 10: Titre tronqué pour l'affichage
+            #Titre tronqué pour l'affichage
             display_title = book_title if len(book_title) <= 40 else book_title[:37] + "..."
             
             # Métrique à afficher avec étoiles
@@ -169,7 +165,7 @@ def show_top_rated_books(books_df):
                 help=rating_help
             )
             
-            # AMÉLIORATION 12: Badge de qualité selon la note
+            #Badge de qualité selon la note
             if rating_value >= 9.5:
                 cols[col_idx].markdown("🏆 **Chef-d'œuvre**", help="Note exceptionnelle ≥ 9.5/10")
             elif rating_value >= 9.0:
@@ -180,7 +176,7 @@ def show_top_rated_books(books_df):
                 cols[col_idx].markdown("📚 **Recommandé**", help="Bonne note")
             
             # Bouton d'action
-            if st.button(f"📖 Détails", key=f"details_rated_{idx}"):
+            if st.button("📖 Détails", key=f"details_rated_{idx}"):
                 # CORRECTION: Gestion sécurisée de rating_count
                 if rating_count is not None:
                     rating_count_text = f" ({rating_count} évaluations)"
@@ -188,7 +184,7 @@ def show_top_rated_books(books_df):
                     rating_count_text = ""
                 st.info(f"📚 **{book_title}**\n\n⭐ Note: {rating_value:.1f}/10{rating_count_text}")
     
-    # AMÉLIORATION 13: Statistiques spécialisées pour les notes
+    # Statistiques spécialisées pour les notes
     with st.expander("📊 Statistiques des notes"):
         col1, col2, col3 = st.columns(3)
         
@@ -227,7 +223,7 @@ def show_top_rated_books(books_df):
             st.bar_chart(rating_counts)
 
 
-# FONCTION BONUS: Version simplifiée améliorée
+# Version simplifiée améliorée
 def show_top_rated_books_simple(books_df):
     """Version simplifiée avec améliorations minimales."""
     st.subheader("⭐ Livres les mieux notés")
@@ -237,7 +233,7 @@ def show_top_rated_books_simple(books_df):
         st.error("❌ Dataset invalide ou colonne Book-Rating manquante")
         return
     
-    # AMÉLIORATION: Filtrer les livres avec au moins 3 évaluations pour éviter les biais
+    # Filtrer les livres avec au moins 3 évaluations pour éviter les biais
     if 'Rating-Count' in books_df.columns:
         reliable_books = books_df[books_df['Rating-Count'] >= 3]
         if not reliable_books.empty:

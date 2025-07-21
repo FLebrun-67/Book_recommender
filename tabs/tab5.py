@@ -109,7 +109,7 @@ def show_popular_books(books_df):
                 cols[col_idx].markdown("📚 **Découverte**", help="Livre en cours de découverte")
             
             # Bouton d'action
-            if st.button(f"📖 Détails", key=f"details_popular_{idx}"):
+            if st.button("📖 Détails", key=f"details_popular_{idx}"):
                 # Calculer la note moyenne si disponible
                 if 'Book-Rating' in books_df.columns:
                     book_ratings = books_df[books_df['Book-Title'] == book_title]['Book-Rating']
