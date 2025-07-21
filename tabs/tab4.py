@@ -58,7 +58,7 @@ def show_about_tab():
         **Pour les clients :**
         - 🔍 Découverte personnalisée
         - 📚 Recommandations basées sur leurs goûts
-        - ⭐ Livres similaires de qualité
+        - ⭐ Livres similaires
         - 🎨 Suggestions diversifiées
         """)
     

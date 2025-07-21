@@ -29,7 +29,7 @@ graph TD
     A[API OpenLibrary] --> B[Dataset Builder KNN]
     A --> C[Dataset Enricher SVD]
     
-    B --> D[enhanced_dataset_with_descriptions.json]
+    B --> D[catalog_clean.csv]
     C --> E[dataset_enriched_full.csv]
     
     E --> F[SVD Training]
