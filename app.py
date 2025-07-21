@@ -8,6 +8,37 @@ from tabs.tab6 import show_top_rated_books
 from tabs.tab_test_api import show_test_api_tab
 from tabs.tab_bookstore_demo import show_bookstore_demo
 
+# Fonction pour extraire les genres favoris
+def get_favorite_genres(user_data):
+    if 'subject_string_final' not in user_data.columns:
+        return 'N/A'
+    
+    # 1. Filtrer les livres bien notés (≥ 7)
+    liked_books = user_data[user_data['Book-Rating'] >= 7]
+    
+    if liked_books.empty:
+        return 'Aucune préférence'
+    
+    # 2. Extraire tous les genres
+    all_genres = []
+    for genres_string in liked_books['subject_string_final'].dropna():
+        if genres_string and str(genres_string) != 'nan':
+            # Séparer les genres (assumons qu'ils sont séparés par des virgules)
+            genres_list = [g.strip() for g in str(genres_string).split(',')]
+            all_genres.extend(genres_list)
+    
+    # 3. Compter les fréquences
+    if not all_genres:
+        return 'Genres non disponibles'
+    
+    from collections import Counter
+    genre_counts = Counter(all_genres)
+    
+    # 4. Prendre les 2 genres les plus fréquents
+    top_genres = [genre for genre, count in genre_counts.most_common(2)]
+    
+    return ', '.join(top_genres)
+
 # Configure the Streamlit app
 st.set_page_config(
     page_title="📚 Book Recommender System",
@@ -29,10 +60,10 @@ try:
 
     # Initialize session state
     if 'user_id' not in st.session_state:
-        st.session_state.user_id = "Guest user"
+        st.session_state.user_id = "Invité"
 
     # User selection
-    user_ids = ["Guest user"] + list(books_df["User-ID"].unique())
+    user_ids = ["Invité"] + list(books_df["User-ID"].unique())
 
     # Selectbox dans la sidebar
     selected_user = st.sidebar.selectbox(
@@ -50,7 +81,7 @@ try:
             st.session_state["history"] = []
 
     # Affichage de l'utilisateur actuel
-    if st.session_state.user_id == "Guest user":
+    if st.session_state.user_id == "Invité":
         st.sidebar.info("👋 Bienvenue !")
         st.sidebar.write("Sélectionner un utilisateur pour avoir des recommandations personnalisées")
     else:
@@ -60,15 +91,14 @@ try:
         user_data = books_df[books_df["User-ID"] == st.session_state.user_id]
         if not user_data.empty:
             user_stats = {
-                "Books rated": len(user_data),
-                "Average rating": f"{user_data['Book-Rating'].mean():.1f}",
-                "Favorite genre": user_data.groupby('Book-Title').first().get('Final_Tags', 'N/A') if 'Final_Tags' in books_df.columns else 'N/A'
+                "Livres évalués": len(user_data),
+                "Note moyenne": f"{user_data['Book-Rating'].mean():.1f}",
+                "Genre favoris": get_favorite_genres(user_data)
             }
         
-            st.sidebar.write("**📊 Your stats:**")
+            st.sidebar.write("**📊 Vos statistiques:**")
             for key, value in user_stats.items():
-                if key != "Favorite genre":  # Éviter l'erreur si Final_Tags n'existe pas
-                    st.sidebar.write(f"- {key}: {value}")
+                st.sidebar.write(f"- {key}: {value}")
 
     # Bouton de déconnexion
     if st.session_state.user_id != "Guest user":
@@ -79,13 +109,13 @@ try:
     st.sidebar.divider()
 
 except Exception as e:
-    st.error(f"❌ Error loading data: {e}")
+    st.error(f"❌ Erreur chargement des données: {e}")
     st.info("💡 Soyez sur que vos artefacts soient proprement chargés")
     st.stop()
 
 # Title and introduction
 st.title("📚 Book Recommender System")
-st.markdown("### Trouver votre prochain livre favori avec notre système de recommandation !")
+st.markdown("### Trouvez votre prochain livre favori avec notre système de recommandation !")
 
 # Initialize session state
 if 'user_id' not in st.session_state:
@@ -143,3 +173,4 @@ FOOTER_HTML = """
         </a>
     </div>
 """
+

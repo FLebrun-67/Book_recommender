@@ -389,7 +389,7 @@ def get_dynamic_knn():
     """Crée une instance cachée du recommandeur dynamique"""
     return DynamicKNNRecommender()
 
-def search_and_recommend_streamlit(query: str, target_book: str = None, limit: int = 20) -> Tuple[List[Dict], List[Dict]]:  # type: ignore
+def search_and_recommend_streamlit(query: str, target_book: str = None, limit: int = 20) -> Tuple[List[Dict], List[Dict]]: 
     """
     Fonction helper pour Streamlit : recherche et recommande
     """

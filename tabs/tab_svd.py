@@ -24,11 +24,11 @@ def show_user_recommendations(books_df, svd_model):
     # Options d'affichage
     col1, col2 = st.columns(2)
     with col1:
-        show_descriptions = st.checkbox("Show book descriptions", value=False)
+        show_descriptions = st.checkbox("Résumé des livres", value=False)
     
     with col2:
         if has_enriched_data:
-            use_hybrid = st.checkbox("Use Hybrid Recommendations 🌟", value=True, 
+            use_hybrid = st.checkbox("Recommandations hybrides 🌟", value=True, 
                                     help="Utilise les métadonnées enrichies pour de meilleures recommandations")
         else:
             use_hybrid = False
@@ -43,19 +43,19 @@ def show_user_recommendations(books_df, svd_model):
         st.warning("⚠️ Dataset de base - Considérez l'enrichissement pour de meilleures recommandations")
     
     # Bouton de recommandation principal
-    if st.button("Show Recommendations", key="recommendations_button"):
+    if st.button("Voici vos recommandations", key="recommendations_button"):
         with st.spinner("🔮 Generating personalized recommendations..."):
             
             # Choisir le type de recommandation
             if use_hybrid and has_enriched_data:
-                st.info("🌟 Using hybrid recommendations with enriched metadata!")
+                st.info("🌟 Utilisez les recommandations hybrides avec les métadonnées enrichies")
                 recommendations = recommend_book_svd_hybrid(selected_user, books_df, svd_model)
                 method_used = "Hybrid SVD"
             else:
                 if not has_enriched_data:
-                    st.info("📊 Using classic SVD recommendations")
+                    st.info("📊 Recommandations SVD classique")
                 else:
-                    st.info("📊 Using classic SVD recommendations (hybrid disabled)")
+                    st.info("📊 Recommandations SVD classique (hybrid disabled)")
                 recommendations = recommend_book_svd(selected_user, books_df, svd_model)
                 method_used = "Classic SVD"
 
@@ -72,14 +72,14 @@ def show_user_recommendations(books_df, svd_model):
             })
             
             # Affichage des recommandations
-            st.subheader("🔍 Recommendations for you:")
+            st.subheader("🔍 Vos recommandations:")
             
             # Afficher les préférences détectées si mode hybride
             if use_hybrid and has_enriched_data:
                 try:
                     from utils import extract_user_preferences
                     user_prefs = extract_user_preferences(selected_user, books_df)
-                    if user_prefs['preferred_genres']:
+                    if user_prefs['Genres préférés']:
                         with st.expander("🎯 Vos préférences détectées"):
                             st.write(f"**Genres préférés:** {', '.join(user_prefs['preferred_genres'][:5])}")
                             st.write(f"**Période préférée:** {user_prefs['preferred_year_range'][0]} - {user_prefs['preferred_year_range'][1]}")
@@ -103,9 +103,9 @@ def show_user_recommendations(books_df, svd_model):
                             
                             # Afficher le score de recommandation
                             if use_hybrid and has_enriched_data:
-                                col.caption(f"🎯 Hybrid Score: {rating:.2f}")
+                                col.caption(f"🎯 Score hybride: {rating:.2f}")
                             else:
-                                col.caption(f"⭐ Predicted Rating: {rating:.1f}/10")
+                                col.caption(f"⭐ Notes prédites: {rating:.1f}/10")
                             
                             # Afficher la description si demandée
                             if show_descriptions and book_description != "Description non disponible":
@@ -113,11 +113,11 @@ def show_user_recommendations(books_df, svd_model):
                                     description_text = book_description[:200] + "..." if len(book_description) > 200 else book_description
                                     st.write(description_text)
         else:
-            st.warning("No recommendations found for this user.")
+            st.warning("Pas de recommandation trouvé pour cette utilisateur.")
 
     # Section historique
-    if st.checkbox("View recommendation history", key="history_user"):
-        st.subheader("📜 History of recommendations")
+    if st.checkbox("Votre historique", key="history_user"):
+        st.subheader("📜 Historique de vos recommandations")
         if selected_user in st.session_state and st.session_state[selected_user]:
             for i, entry in enumerate(reversed(st.session_state[selected_user]), 1):
                 if entry.get("type") == "user":
@@ -130,17 +130,17 @@ def show_user_recommendations(books_df, svd_model):
                         if len(book_list) > 5:
                             st.write(f"... and {len(book_list) - 5} more books")
         else:
-            st.write("No history found for this user.")
+            st.write("Pas d'historique trouvé.")
     
     # Informations techniques sur le dataset (optionnel)
-    if st.checkbox("📊 Technical Information", key="tech_info"):
-        st.subheader("📊 Technical Dataset Information")
+    if st.checkbox("📊 Information technique", key="tech_info"):
+        st.subheader("📊 Information sur le Dataset")
         
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Total Books", books_df['Book-Title'].nunique())
-            st.metric("Total Users", books_df['User-ID'].nunique())
-            st.metric("Total Ratings", len(books_df))
+            st.metric("Livres totals", books_df['Book-Title'].nunique())
+            st.metric("Utilisateurs totals", books_df['User-ID'].nunique())
+            st.metric("Notes totales", len(books_df))
         
         with col2:
             # Informations sur l'enrichissement
