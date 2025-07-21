@@ -212,8 +212,7 @@ book_recommender/
 │
 ├── 🏗️ CONSTRUCTION DONNÉES
 │   ├── KNN:
-│   ├── dataset_builder.py          # Construction dataset pour le KNN
-│   ├── build_dataset.py            
+│   ├── dataset_enricher.py            
 │   ├── api_utils.py                # Interface OpenLibrary
 │   ├── SVD:
 |   └── Ratings_enriched_optimized.csv      # dataset ratings kaggle avec métadonnées de l'API OpenLibrary
@@ -221,7 +220,7 @@ book_recommender/
 │
 ├── 📊 DONNÉES
 │   ├── data/
-│   │   ├── enhanced_dataset_with_descriptions.json (créé avec le dataset_builder pour le KNN)
+│   │   ├── catalog_clean.csv (crée avec le dataset_enricher.py)
 │   │   └── Ratings_enriched_optimized.csv (pour le SVD)
 │   └── artifacts/
 │       ├── svd_model.pkl
