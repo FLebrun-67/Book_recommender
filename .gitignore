@@ -147,3 +147,8 @@ diagnostic_dataset.py
 diagnostic_dataset.png
 isbn_cache.json
 test_get_api.py
+run_catalog_cleaner.py
+nettoyage_dataset.py
+model_evaluation.py
+evaluation_results.json
+evaluation_results_summary.txt

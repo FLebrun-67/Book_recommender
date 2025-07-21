@@ -8,7 +8,7 @@ def show_user_recommendations(books_df, svd_model):
     if "history" not in st.session_state:
         st.session_state["history"] = []
         
-    st.subheader("📚 Find and get recommendations")
+    st.subheader("📚 Trouver et obtener des recommandations")
     
     if 'user_id' not in st.session_state:
         st.session_state.user_id = "Guest user"

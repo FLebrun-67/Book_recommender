@@ -1,8 +1,3 @@
-""" 
-Trains a book recommender system using enriched dataset.
-Focuses on SVD training with enriched metadata support.
-"""
-
 import os
 import pickle
 import pandas as pd
@@ -275,8 +270,8 @@ def main():
     print("🚀 Starting enhanced book recommender training...")
     
     # File paths - priorité au dataset enrichi
-    enriched_data_path = "./data/Ratings_enriched.csv"
-    fallback_data_path = "./data/Ratings_enriched.csv"
+    enriched_data_path = "./data/Ratings_enriched_optimized.csv"
+    fallback_data_path = "./data/Ratings_enriched_optimized.csv"
     artifacts_path = "artifacts/"
     
     # Déterminer quel dataset utiliser

@@ -267,22 +267,19 @@ book_recommender/
 ## 📈 Métriques de Performance
 
 ### **Modèle SVD**
-- **RMSE** : ~0.85 (sur échelle 1-10)
-- **MAE** : ~0.67
-- **Temps d'entraînement** : ~2 minutes (42k ratings)
-- **Temps de prédiction** : ~50ms par utilisateur
+- **RMSE** : 1.428 (sur échelle 1-10)
+- **MAE** : 1.137
+- **Ecart (overfitting)** : 0.1837
+- **Erreur moyenne** : 1.137 
 
 ### **KNN Dynamique**
-- **Similarité cosinus** : 0.3-0.95
-- **Temps de recommandation** : ~100ms
-- **Couverture** : 100% des livres du dataset
-- **Diversité** : Score moyen 0.7/1.0
+- **Similarité cosinus** : 0.556-1.000
+- **KNN diversité moyenne** : 0.852
 
 ### **Dataset**
-- **Livres** : 4,317 livres enrichis
-- **Utilisateurs** : 3,217 utilisateurs uniques
-- **Ratings** : 42,331 évaluations
-- **Métadonnées** : 70% couverture complète
+- **Livres** : 5,937 livres enrichis
+- **Utilisateurs** : 10,962 utilisateurs uniques
+- **Ratings** : 79,769 évaluations
 
 ---
 

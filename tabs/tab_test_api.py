@@ -132,20 +132,7 @@ def show_test_api_tab():
             st.warning("⚠️ Veuillez entrer un ISBN")
     
     st.divider()
-    
-    # Section 4: Informations techniques
-    st.subheader("ℹ️ Informations techniques")
-    
-    
-    with st.expander("🔧 Statistiques API"):
-        st.info("""
-        **Open Library API :**
-        - ✅ Gratuit et sans limite stricte
-        - ✅ ~30 millions de livres
-        - ✅ Métadonnées complètes
-        - ⚠️ Délai de 0.1s entre requêtes (respect de l'API)
-        - ⚠️ Beaucoup de doublons
-        """)
+
         
 
     

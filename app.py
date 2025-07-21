@@ -25,7 +25,7 @@ try:
     total_users = books_df['User-ID'].nunique()
 
     st.sidebar.divider()
-    st.sidebar.header("👤 User Login")
+    st.sidebar.header("👤 Login")
 
     # Initialize session state
     if 'user_id' not in st.session_state:
@@ -36,7 +36,7 @@ try:
 
     # Selectbox dans la sidebar
     selected_user = st.sidebar.selectbox(
-        "Choisi un utilisateur:",
+        "Choisir un ID:",
         options=user_ids,
         index=user_ids.index(st.session_state.user_id),
         key="sidebar_user_selector"
@@ -51,8 +51,8 @@ try:
 
     # Affichage de l'utilisateur actuel
     if st.session_state.user_id == "Guest user":
-        st.sidebar.info("👋 Bienvenue!")
-        st.sidebar.write("Sélectionne un utilisateur pour avoir des recommandations personnalisés")
+        st.sidebar.info("👋 Bienvenue !")
+        st.sidebar.write("Sélectionner un utilisateur pour avoir des recommandations personnalisées")
     else:
         st.sidebar.success(f"✅ Logged in as: **{st.session_state.user_id}**")
     
@@ -85,7 +85,7 @@ except Exception as e:
 
 # Title and introduction
 st.title("📚 Book Recommender System")
-st.markdown("### Trouvé votre prochain livre favoris avec notre système de recommandation!")
+st.markdown("### Trouver votre prochain livre favori avec notre système de recommandation !")
 
 # Initialize session state
 if 'user_id' not in st.session_state:
@@ -96,13 +96,13 @@ if "active_tab" not in st.session_state:
 # Tabs for different sections
 login_tab = f"Logout / {st.session_state.user_id}" if st.session_state.user_id != "Guest user" else "Login / Guest"
 tabsvd, tab_bookstore, tab3, tab5, tab6, tab_api, tab4 = st.tabs([
-    "🧑‍💻 Mes recommandations utilisateurs",
-    "📚 Recommandations par livres",
+    "🧑‍💻 Mes recommandations",
+    "📚 Recommandations par livre",
     "🔍 Recherche",
     "📈 Livres populaires",
     "⭐ Les livres les mieux notés",
     "🧪 Test API",
-    "📊 Note"
+    "📊 A propos"
 ])
 
 # Tab contents

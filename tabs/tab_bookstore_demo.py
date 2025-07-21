@@ -1,24 +1,56 @@
 # tabs/tab_bookstore_demo.py
 import streamlit as st
-#import pandas as pd
+import pandas as pd
 from knn_dynamic import get_dynamic_knn
 #from utils import render_aligned_image
 import random
 
+def load_books_from_csv(csv_path: str) -> list:
+    """Charge les livres depuis le CSV avec toutes les corrections"""
+    df = pd.read_csv(csv_path)
+    catalogue_df = df.drop_duplicates(subset="ISBN")
+    books = []
+
+    for _, row in catalogue_df.iterrows():
+        
+        safe_year: int = 2000 
+        year_value = row.get('api_first_publish_year')
+        if not (pd.isna(year_value) or year_value == '' or str(year_value) == 'nan'):
+            try:
+                safe_year = int(float(year_value))
+            except (ValueError, TypeError):
+                safe_year = 2000
+
+        # ✅ CORRECTION 2: Description propre
+        description = row.get('Description', '')
+        if pd.isna(description) or str(description) == 'nan':
+            description = ''
+
+        books.append({
+            'title': row.get('Book-Title', ''),
+            'author_string': row.get('Book-Author', ''),
+            'subject_string': row.get('subject_string_final', ''), 
+            'description': str(description).strip(), 
+            'publisher_string': row.get('api_publisher_string', ''), 
+            'first_publish_year': safe_year,  
+            'isbn': row.get('ISBN', ''),
+            'cover_url': row.get('api_cover_url', ''),
+            'key': row.get('key', '')
+        })
+    return books
+
+
 def show_bookstore_demo():
     """Onglet pour les recommandations dynamiques avec KNN"""
     
-    st.header("🤖 Recommandations Dynamiques")
+    st.header("Recommandations par livre")
     st.markdown("### Système de recommandation basé sur l'API Open Library")
     
     try:
-        import json
-        with open("data/enhanced_dataset_with_descriptions.json", 'r', encoding='utf-8') as f:
-            json_data = json.load(f)
-            books_data = json_data.get('books_data', [])
-        
+        books_data = load_books_from_csv("data/catalog_clean.csv")
+
         knn = get_dynamic_knn()
-        knn.books_data = books_data #on charge les données du JSON
+        knn.books_data = books_data
 
         if len(books_data) >= 5:
             knn._fit_model()
@@ -218,7 +250,7 @@ def show_bookstore_demo():
                                     
                                     with col3:
                                         # Outils pour le libraire
-                                        st.markdown("**🛠️ Actions libraire :**")
+                                        st.markdown("**💼 Infos pratiques :**")
                                         
                                         # Simulation de disponibilité
                                         stock_status = random.choice([
