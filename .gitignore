@@ -135,7 +135,6 @@ cython_debug/
 
 trash/
 analyse_enriched.py
-dataset_enricher.py
 notebooks/
 scrapper/
 svd_hybrid.py
@@ -152,3 +151,5 @@ nettoyage_dataset.py
 model_evaluation.py
 evaluation_results.json
 evaluation_results_summary.txt
+dataset_builder.py
+build_dataset.py
