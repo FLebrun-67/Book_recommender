@@ -101,9 +101,9 @@ try:
                 st.sidebar.write(f"- {key}: {value}")
 
     # Bouton de déconnexion
-    if st.session_state.user_id != "Guest user":
+    if st.session_state.user_id != "Invité":
         if st.sidebar.button("🚪 Logout", key="logout_btn"):
-            st.session_state.user_id = "Guest user"
+            st.session_state.user_id = "Invité"
             st.rerun()
 
     st.sidebar.divider()
@@ -119,12 +119,12 @@ st.markdown("### Trouvez votre prochain livre favori avec notre système de reco
 
 # Initialize session state
 if 'user_id' not in st.session_state:
-    st.session_state.user_id = "Guest user"
+    st.session_state.user_id = "Invité"
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = 0  # Par défaut, Tab 0 est actif
 
 # Tabs for different sections
-login_tab = f"Logout / {st.session_state.user_id}" if st.session_state.user_id != "Guest user" else "Login / Guest"
+login_tab = f"Logout / {st.session_state.user_id}" if st.session_state.user_id != "Invité" else "Login / Guest"
 tabsvd, tab_bookstore, tab3, tab5, tab6, tab_api, tab4 = st.tabs([
     "🧑‍💻 Mes recommandations",
     "📚 Recommandations par livre",

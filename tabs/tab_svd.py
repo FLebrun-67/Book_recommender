@@ -8,7 +8,7 @@ def show_user_recommendations(books_df, svd_model):
     if "history" not in st.session_state:
         st.session_state["history"] = []
         
-    st.subheader("📚 Trouver et obtener des recommandations")
+    st.subheader("📚 Trouver et obtenir des recommandations")
     
     if 'user_id' not in st.session_state:
         st.session_state.user_id = "Guest user"
@@ -79,7 +79,7 @@ def show_user_recommendations(books_df, svd_model):
                 try:
                     from utils import extract_user_preferences
                     user_prefs = extract_user_preferences(selected_user, books_df)
-                    if user_prefs['Genres préférés']:
+                    if user_prefs['preferred_genres']:
                         with st.expander("🎯 Vos préférences détectées"):
                             st.write(f"**Genres préférés:** {', '.join(user_prefs['preferred_genres'][:5])}")
                             st.write(f"**Période préférée:** {user_prefs['preferred_year_range'][0]} - {user_prefs['preferred_year_range'][1]}")
